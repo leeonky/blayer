@@ -5,7 +5,7 @@ SUBDIRS += snubber_test pinf_test
 endif
 
 if !ENV_TEST
-SUBDIRS += snubber pinf
+SUBDIRS += pinf snubber
 endif
 
 EXTRA_DIST = test.h test.sh
