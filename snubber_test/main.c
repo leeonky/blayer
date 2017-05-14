@@ -8,15 +8,14 @@ static void test_pass_through_and_exit() {
 	char output_buffer[1024] = {};
 	char error_buffer[1024] = {};
 	FILE *input_stream = fmemopen(input_buffer, sizeof(input_buffer), "r");
-	FILE *output_stream = fmemopen(output_stream, sizeof(output_buffer), "w");
+	FILE *output_stream = fmemopen(output_buffer, sizeof(output_buffer), "w");
 	FILE *error_stream = fmemopen(error_buffer, sizeof(error_buffer), "w");
 
-	CU_ASSERT(snubber_main(0, NULL, input_stream, output_stream, error_stream) == 0 );
-	CU_ASSERT(strcmp(output_buffer, "Hello world!") == 0 );
-
+	CU_ASSERT_EQUAL(snubber_main(0, NULL, input_stream, output_stream, error_stream), 0);
 	fclose(input_stream);
 	fclose(output_stream);
 	fclose(error_stream);
+	CU_ASSERT_STRING_EQUAL(output_buffer, "Hello world!\n")
 }
 
 int main() {
