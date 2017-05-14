@@ -32,6 +32,11 @@ stamp-h1
 *.gcno
 *.gcda
 
+config.guess
+config.sub
+ltmain.sh
+.libs
+
 ###########
 *.test
 snubber/snubber

@@ -12,6 +12,7 @@ AC_ARG_VAR(ENV, TEST; DEV)
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AC_PROG_LIBTOOL
 
 AC_CHECK_LIB([cunit], [CU_initialize_registry])
 
@@ -29,10 +30,12 @@ AC_CONFIG_FILES([Makefile])
 
 # Production Makefile
 AM_COND_IF([ENV_TEST], [],
-	  [AC_CONFIG_FILES([snubber/Makefile])])
+	  [AC_CONFIG_FILES([snubber/Makefile
+	   pinf/Makefile])])
 
 # Testing Makefile
 AM_COND_IF([ENV_PRD], [],
-	  [AC_CONFIG_FILES([snubber_test/Makefile])])
+	  [AC_CONFIG_FILES([snubber_test/Makefile
+	   pinf_test/Makefile])])
 
 AC_OUTPUT

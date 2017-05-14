@@ -13,7 +13,7 @@ fi
 
 run_test_in(){
 	pushd "$1" > /dev/null
-	make > /dev/null && ./$(ls *.test)
+	./$(ls *.test)
 	popd > /dev/null
 }
 
@@ -28,6 +28,8 @@ run_test() {
 	fi
 }
 
+echo '============================================'
+
 pushd $root_path > /dev/null
-run_test
+make > /dev/null && run_test
 popd > /dev/null

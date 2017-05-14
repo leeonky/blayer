@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "test.h"
-#include "snubber/snubber.h"
+#include "pinf/pinf.h"
 
 static void test_pass_through_and_exit() {
 	char input_buffer[1024] = "Hello world!\nEXIT\ndump";
@@ -11,7 +11,7 @@ static void test_pass_through_and_exit() {
 	FILE *output_stream = fmemopen(output_buffer, sizeof(output_buffer), "w");
 	FILE *error_stream = fmemopen(error_buffer, sizeof(error_buffer), "w");
 
-	CU_ASSERT_EQUAL(snubber_main(0, NULL, input_stream, output_stream, error_stream), 0);
+	CU_ASSERT_EQUAL(pinf_main(input_stream, output_stream, error_stream), 0);
 	fclose(input_stream);
 	fclose(output_stream);
 	fclose(error_stream);

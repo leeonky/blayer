@@ -1,11 +1,11 @@
 SUBDIRS = 
 
 if !ENV_PRD
-SUBDIRS += snubber_test
+SUBDIRS += snubber_test pinf_test
 endif
 
 if !ENV_TEST
-SUBDIRS += snubber
+SUBDIRS += snubber pinf
 endif
 
 EXTRA_DIST = test.h test.sh
