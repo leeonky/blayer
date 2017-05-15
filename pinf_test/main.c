@@ -22,7 +22,7 @@ int main() {
 	CU_pSuite suite = NULL;
 	init_test();
 
-	suite = create_suite("snubber test", NULL, NULL);
+	suite = create_suite("pinf test", NULL, NULL);
 	add_case(suite, test_pass_through_and_exit);
 
 	return run_test();
