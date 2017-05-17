@@ -4,58 +4,34 @@
 #include "test.h"
 #include "vdecode/vdecode.h"
 
-void (*mock_av_register_all)();
+mock_void_function_0(av_register_all);
+mock_function_4(int, avformat_open_input, AVFormatContext **, const char *, AVInputFormat *, AVDictionary **);
 
-void av_register_all() {
-	if (mock_av_register_all)
-		mock_av_register_all();
-}
+static int main_argc;
+static char **main_args;
 
-int (*mock_avformat_open_input)(AVFormatContext **, const char *, AVInputFormat *, AVDictionary **);
-
-int avformat_open_input (AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
-	if (mock_avformat_open_input)
-		return mock_avformat_open_input(ps, url, fmt, options);
+static int init_suite() {
+	static char *args[] = { "test.avi" };
+	main_args = args;
+	main_argc = sizeof(args)/sizeof(args[0]);
+	init_mock_function(av_register_all, NULL);
+	init_mock_function(avformat_open_input, NULL);
 	return 0;
 }
 
-
-static int av_register_all_called;
-
-static void fake_av_register_all() {
-	av_register_all_called = 1;
-}
-
-
-static AVFormatContext **avformat_open_input_ps;
-static const char *avformat_open_input_url;
-static AVInputFormat *avformat_open_input_fmt;
-static AVDictionary **avformat_open_input_options;
-
-static int fake_avformat_open_input (AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
-	avformat_open_input_ps = ps;
-	avformat_open_input_url = url;
-	avformat_open_input_fmt = fmt;
-	avformat_open_input_options = options;
-}
-
 static void open_stream_with_file() {
-	mock_av_register_all = fake_av_register_all;
-	mock_avformat_open_input = fake_avformat_open_input;
-	char *args[] = { "test.avi" };
-	avformat_open_input_url = "";
+	vdecode_main(main_argc, main_args);
 
-	vdecode_main(1, args);
-
-	CU_ASSERT_TRUE(av_register_all_called);
-	CU_ASSERT_STRING_EQUAL(avformat_open_input_url, "test.avi");
+	CU_ASSERT_EQUAL(called_times_of(av_register_all), 1);
+	CU_ASSERT_EQUAL(called_times_of(avformat_open_input), 1);
+	CU_ASSERT_STRING_EQUAL(avformat_open_input_p2, "test.avi");
 }
 
 int main() {
 	CU_pSuite suite = NULL;
 	init_test();
 
-	suite = create_suite("vdecode test", NULL, NULL);
+	suite = create_suite("vdecode test", init_suite, NULL);
 	add_case(suite, open_stream_with_file);
 
 	return run_test();
