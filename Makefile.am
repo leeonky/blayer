@@ -10,4 +10,4 @@ endif
 
 EXTRA_DIST = test.h test.sh
 
-AM_CFLAGS = -I$(top_srcdir)
+AM_CFLAGS = -Wall -I$(top_srcdir)
