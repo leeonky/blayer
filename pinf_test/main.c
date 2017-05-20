@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "test.h"
+#include "testutil/testutil.h"
 #include "pinf/pinf.h"
 
 static void test_pass_through_and_exit() {

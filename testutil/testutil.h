@@ -1,5 +1,14 @@
-#ifndef MOCK_H
-#define MOCK_H
+#ifndef TESTUTIL_H
+#define TESTUTIL_H
+
+#include <CUnit/Basic.h>
+
+extern void init_test();
+extern int run_test();
+extern CU_pSuite create_suite(const char *suit_name, int (*init)(), int (*clean)());
+extern void add_case_with_name(CU_pSuite suite, const char *case_name, void (*test)());
+
+#define add_case(suite, test_case) add_case_with_name(suite, #test_case, test_case)
 
 #define extern_mock_void_function_0(func) \
 	extern int func ## _times;\
@@ -85,5 +94,4 @@
 #define CU_EXPECT_CALLED_ONCE(func) CU_ASSERT_EQUAL(called_times_of(func), 1)
 #define CU_EXPECT_CALLED_WITH_STRING(func, at, arg) CU_ASSERT_STRING_EQUAL(params_of(func, at), arg)
 #define CU_EXPECT_CALLED_WITH(func, at, arg) CU_ASSERT_EQUAL(params_of(func, at), arg)
-
 #endif

@@ -1,7 +1,5 @@
-#ifndef TEST_H
-#define TEST_H
-
-#include <CUnit/Basic.h>
+#include <stdlib.h>
+#include "testutil.h"
 
 void init_test() {
 	if (CUE_SUCCESS != CU_initialize_registry())
@@ -31,6 +29,3 @@ void add_case_with_name(CU_pSuite suite, const char *case_name, void (*test)()) 
 	}
 }
 
-#define add_case(suite, test_case) add_case_with_name(suite, #test_case, test_case)
-
-#endif

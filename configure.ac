@@ -30,15 +30,20 @@ AC_CONFIG_FILES([Makefile])
 
 # Production Makefile
 AM_COND_IF([ENV_TEST], [],
-	  [AC_CONFIG_FILES([snubber/Makefile
+	  [AC_CONFIG_FILES([
+	   pinf/Makefile
+	   snubber/Makefile
 	   vdecode/Makefile
-	   pinf/Makefile])])
+	   ])])
 
 # Testing Makefile
 AM_COND_IF([ENV_PRD], [],
-	  [AC_CONFIG_FILES([snubber_test/Makefile
+	  [AC_CONFIG_FILES([
+	   testutil/Makefile
 	   mock_ffmpeg/Makefile
+	   pinf_test/Makefile
+	   snubber_test/Makefile
 	   vdecode_test/Makefile
-	   pinf_test/Makefile])])
+	   ])])
 
 AC_OUTPUT

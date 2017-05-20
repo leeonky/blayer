@@ -2,7 +2,7 @@
 #define MOCK_FFMPEG_
 
 #include <libavformat/avformat.h>
-#include "mock.h"
+#include "testutil/testutil.h"
 
 extern_mock_void_function_0(av_register_all);
 extern_mock_function_4(int, avformat_open_input, AVFormatContext **, const char *, AVInputFormat *, AVDictionary **);

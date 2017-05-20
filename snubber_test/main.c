@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "test.h"
+#include "testutil/testutil.h"
 #include "snubber/snubber.h"
 
 FILE *input_stdin, *input_stdout, *input_stderr;
