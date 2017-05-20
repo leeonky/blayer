@@ -40,3 +40,4 @@ ltmain.sh
 ###########
 *.test
 snubber/snubber
+vdecode/vdecode

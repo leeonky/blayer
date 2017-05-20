@@ -12,22 +12,17 @@ int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
 	return 100;
 }
 
-
 static void test_invoke_pinf_main() {
-	char input_buffer[1024] = "Hello world!\nEXIT\ndump";
-	char output_buffer[1024] = {};
-	char error_buffer[1024] = {};
-	FILE *input_stream = fmemopen(input_buffer, sizeof(input_buffer), "r");
-	FILE *output_stream = fmemopen(output_buffer, sizeof(output_buffer), "w");
-	FILE *error_stream = fmemopen(error_buffer, sizeof(error_buffer), "w");
+	app_context ctxt;
+	init_app_context(&ctxt, "Hello world!\nEXIT\ndump");
+	set_main_args("");
 
-	CU_ASSERT_EQUAL(snubber_main(0, NULL, input_stream, output_stream, error_stream), 100);
-	CU_ASSERT_EQUAL(input_stdin, input_stream);
-	CU_ASSERT_EQUAL(input_stdout, output_stream);
-	CU_ASSERT_EQUAL(input_stderr, error_stream);
-	fclose(input_stream);
-	fclose(output_stream);
-	fclose(error_stream);
+	CU_ASSERT_EQUAL(invoke_main(&ctxt, snubber_main), 100);
+	CU_ASSERT_EQUAL(input_stdin, ctxt.input_stream);
+	CU_ASSERT_EQUAL(input_stdout, ctxt.output_stream);
+	CU_ASSERT_EQUAL(input_stderr, ctxt.error_stream);
+
+	close_app_context(&ctxt);
 }
 
 int main() {

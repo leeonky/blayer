@@ -5,15 +5,8 @@
 #include "mock_ffmpeg/mock_ffmpeg.h"
 #include "vdecode/vdecode.h"
 
-static int main_argc;
-static char **main_args;
-static char input_buffer[1024];
-static char output_buffer[1024];
-static char error_buffer[1024];
-static FILE *input_stream;
-static FILE *output_stream;
-static FILE *error_stream;
 static AVFormatContext format_context;
+static app_context ctxt;
 
 static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
 	*ps = &format_context;
@@ -21,14 +14,9 @@ static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInp
 }
 
 static void before_case() {
-	static char *args[] = { "test.avi" };
-	main_args = args;
-	main_argc = sizeof(args)/sizeof(args[0]);
+	set_main_args("test.avi", "");
+	init_app_context(&ctxt, "");
 	format_context.nb_streams = 0;
-
-	input_stream = fmemopen(input_buffer, sizeof(input_buffer), "r");
-	output_stream = fmemopen(output_buffer, sizeof(output_buffer), "w");
-	error_stream = fmemopen(error_buffer, sizeof(error_buffer), "w");
 
 	init_mock_function(av_register_all, NULL);
 	init_mock_function(avformat_open_input, stub_avformat_open_input);
@@ -36,15 +24,13 @@ static void before_case() {
 }
 
 static void after_case() {
-	fclose(input_stream);
-	fclose(output_stream);
-	fclose(error_stream);
+	close_app_context(&ctxt);
 }
 
 static void open_stream_with_file_and_exit() {
 	before_case();
 
-	CU_ASSERT_EQUAL(vdecode_main(main_argc, main_args, input_stream, output_stream, error_stream), 0);
+	CU_ASSERT_EQUAL(invoke_main(&ctxt, vdecode_main), 0);
 
 	CU_EXPECT_CALLED_ONCE(av_register_all);
 
@@ -57,8 +43,7 @@ static void open_stream_with_file_and_exit() {
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 	CU_EXPECT_CALLED_WITH(avformat_close_input, 1, params_of(avformat_close_input, 1));
 
-	fflush(error_stream);
-	CU_ASSERT_STRING_EQUAL(error_buffer, "Warning[vdecode]: no streams in file\n");
+	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Warning[vdecode]: no streams in file\n");
 	after_case();
 }
 
@@ -75,17 +60,13 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 }
 
 static void set_video_track() {
-	static char *args[] = { "--video", "1", "test.avi" };
 	before_case();
-
-	main_args = args;
-	main_argc = sizeof(args)/sizeof(args[0]);
+	set_main_args("--video", "1", "test.avi", "");
 
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
-	CU_ASSERT_EQUAL(vdecode_main(main_argc, main_args, input_stream, output_stream, error_stream), -1);
-	fflush(error_stream);
-	CU_ASSERT_STRING_EQUAL(error_buffer, "Error[vdecode]: No video stream at 1\n");
+	CU_ASSERT_EQUAL(invoke_main(&ctxt, vdecode_main), -1);
+	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Error[vdecode]: No video stream at 1\n");
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 
 	after_case();

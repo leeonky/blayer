@@ -2,6 +2,26 @@
 #define TESTUTIL_H
 
 #include <CUnit/Basic.h>
+#include <stdio.h>
+
+typedef struct app_context {
+	char input_buffer[1024];
+	char output_buffer[1024];
+	char error_buffer[1024];
+	FILE *input_stream;
+	FILE *output_stream;
+	FILE *error_stream;
+} app_context;
+
+extern void init_app_context(app_context *, const char *);
+extern char* output_buffer(app_context *);
+extern char* error_buffer(app_context *);
+extern void close_app_context(app_context *);
+
+extern int main_argc;
+extern char *main_argv[64];
+extern void set_main_args(char *, ...);
+extern int invoke_main(app_context *, int(*)(int, char**, FILE *, FILE *, FILE *));
 
 extern void init_test();
 extern int run_test();
