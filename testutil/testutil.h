@@ -28,6 +28,23 @@ extern int run_test();
 extern CU_pSuite create_suite(const char *suit_name, int (*init)(), int (*clean)());
 extern void add_case_with_name(CU_pSuite suite, const char *case_name, void (*test)());
 
+extern void (*before_each)();
+extern void (*after_each)();
+
+#define CU_CASE(name) \
+static void exec_ ## name();\
+static void name() {\
+	if(before_each){\
+		before_each();\
+	}\
+	exec_ ## name();\
+	if(after_each){\
+		after_each();\
+	}\
+}\
+static void exec_ ## name()
+extern void before_after(void(*)(), void(*)());
+
 #define add_case(suite, test_case) add_case_with_name(suite, #test_case, test_case)
 
 #define extern_mock_void_function_0(func) \

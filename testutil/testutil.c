@@ -70,3 +70,11 @@ void set_main_args(char *arg1, ...) {
 int invoke_main(app_context *ctxt, int(*sub_main)(int, char**, FILE *, FILE *, FILE *)){
 	return sub_main(main_argc, main_argv, ctxt->input_stream, ctxt->output_stream, ctxt->error_stream);
 }
+
+void (*before_each)();
+void (*after_each)();
+
+void before_after(void(*before)(), void(*after)()) {
+	before_each = before;
+	after_each = after;
+}

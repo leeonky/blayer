@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include "testutil/testutil.h"
 
-/*default video track*/
+/*find video track*/
 /*docode*/
 /*out put*/
-/*init args error return -1*/
 
 extern test_vdecode_main();
 extern test_vdecode_args();
