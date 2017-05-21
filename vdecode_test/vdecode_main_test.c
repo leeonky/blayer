@@ -8,6 +8,8 @@
 static AVFormatContext format_context;
 static app_context ctxt;
 
+#define subject invoke_main(&ctxt, vdecode_main)
+
 static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
 	*ps = &format_context;
 	return 0;
@@ -30,7 +32,7 @@ static void after_case() {
 static void open_stream_with_file_and_exit() {
 	before_case();
 
-	CU_ASSERT_EQUAL(invoke_main(&ctxt, vdecode_main), 0);
+	CU_ASSERT_EQUAL(subject, 0);
 
 	CU_EXPECT_CALLED_ONCE(av_register_all);
 
@@ -65,7 +67,7 @@ static void set_video_track() {
 
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
-	CU_ASSERT_EQUAL(invoke_main(&ctxt, vdecode_main), -1);
+	CU_ASSERT_EQUAL(subject, -1);
 	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Error[vdecode]: No video stream at 1\n");
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 

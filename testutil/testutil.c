@@ -58,6 +58,7 @@ char *main_argv[64];
 void set_main_args(char *arg1, ...) {
 	va_list list;
 	main_argc = 0;
+	main_argv[main_argc++] = "main";
 	va_start(list, arg1);
 	while(strlen(arg1)>0) {
 		main_argv[main_argc++] = arg1;
