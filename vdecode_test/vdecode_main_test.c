@@ -16,17 +16,28 @@ static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInp
 }
 
 static void before_case() {
-	set_main_args("test.avi", "");
+	set_main_args("-v", "0", "test.avi", "");
 	init_app_context(&ctxt, "");
 	format_context.nb_streams = 0;
 
 	init_mock_function(av_register_all, NULL);
 	init_mock_function(avformat_open_input, stub_avformat_open_input);
+	init_mock_function(avformat_find_stream_info, NULL);
 	init_mock_function(avformat_close_input, NULL);
 }
 
 static void after_case() {
 	close_app_context(&ctxt);
+}
+
+static void miss_video_file() {
+	before_case();
+	set_main_args("--video", "1", "");
+
+	CU_ASSERT_EQUAL(subject, -1);
+	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Error[vdecode]: require video file\n");
+
+	after_case();
 }
 
 static void open_stream_with_file_and_exit() {
@@ -46,6 +57,7 @@ static void open_stream_with_file_and_exit() {
 	CU_EXPECT_CALLED_WITH(avformat_close_input, 1, params_of(avformat_close_input, 1));
 
 	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Warning[vdecode]: no streams in file\n");
+
 	after_case();
 }
 
@@ -63,8 +75,6 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 
 static void set_video_track() {
 	before_case();
-	set_main_args("--video", "1", "test.avi", "");
-
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
 	CU_ASSERT_EQUAL(subject, -1);
@@ -76,6 +86,7 @@ static void set_video_track() {
 
 void test_vdecode_main() {
 	CU_pSuite suite = create_suite("vdecode test", NULL, NULL);
+	add_case(suite, miss_video_file);
 	add_case(suite, open_stream_with_file_and_exit);
 	add_case(suite, set_video_track);
 }

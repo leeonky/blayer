@@ -2,13 +2,6 @@
 #include <stdlib.h>
 #include "testutil/testutil.h"
 
-/*static void check_opitons() {*/
-	/*vdecode_args args = {};*/
-/*}*/
-
-/*set video track*/
-
-/*error checking*/
 /*default video track*/
 /*docode*/
 /*out put*/

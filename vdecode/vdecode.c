@@ -29,13 +29,18 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
 	int res = 0;
 	AVFormatContext *avformat_context = NULL;
+	vdecode_args args;
+
+	if(process_args(&args, argc, argv, stderr))
+		return -1;
+
 	av_register_all();
-	avformat_open_input(&avformat_context, argv[1], NULL, NULL);
+	avformat_open_input(&avformat_context, args.file_name, NULL, NULL);
 	avformat_find_stream_info(avformat_context, NULL);
 	if (!avformat_context->nb_streams) {
 		fprintf(stderr, "Warning[vdecode]: no streams in file\n");
 	} else {
-		if (avformat_context->streams[0]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) {
+		if (avformat_context->streams[args.video_index]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) {
 			fprintf(stderr, "Error[vdecode]: No video stream at 1\n");
 			res = -1;
 		}
