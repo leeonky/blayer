@@ -3,7 +3,9 @@
 #include <cunitexd.h>
 #include "pinf/pinf.h"
 
-static void test_pass_through_and_exit() {
+SUITE_START("pinf test");
+
+SUITE_CASE("should pass through line and exit when got EXIT") {
 	init_subject("Hello world!\nEXIT\ndump");
 
 	CU_ASSERT_EQUAL(pinf_main(actxt.input_stream, actxt.output_stream, actxt.error_stream), 0);
@@ -12,12 +14,12 @@ static void test_pass_through_and_exit() {
 	close_subject();
 }
 
+SUITE_END(pinf_test);
+
 int main() {
-	CU_pSuite suite = NULL;
 	init_test();
 
-	suite = create_suite("pinf test", NULL, NULL);
-	add_case(suite, test_pass_through_and_exit);
+	ADD_SUITE(pinf_test);
 
 	return run_test();
 }

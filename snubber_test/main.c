@@ -3,6 +3,8 @@
 #include <cunitexd.h>
 #include "snubber/snubber.h"
 
+SUITE_START("snubber test");
+
 FILE *input_stdin, *input_stdout, *input_stderr;
 
 int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
@@ -12,7 +14,7 @@ int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
 	return 100;
 }
 
-static void test_invoke_pinf_main() {
+SUITE_CASE("test invake pinf main") {
 	init_subject("Hello world!\nEXIT\ndump");
 
 	CU_ASSERT_EQUAL(invoke_subject(snubber_main), 100);
@@ -23,12 +25,12 @@ static void test_invoke_pinf_main() {
 	close_subject();
 }
 
+SUITE_END(snubber);
+
 int main() {
-	CU_pSuite suite = NULL;
 	init_test();
 
-	suite = create_suite("snubber test", NULL, NULL);
-	add_case(suite, test_invoke_pinf_main);
+	ADD_SUITE(snubber);
 
 	return run_test();
 }
