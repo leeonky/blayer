@@ -3,8 +3,6 @@
 #include <cunitexd.h>
 #include "snubber/snubber.h"
 
-SUITE_START("snubber test");
-
 FILE *input_stdin, *input_stdout, *input_stderr;
 
 int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
@@ -14,15 +12,21 @@ int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
 	return 100;
 }
 
-SUITE_CASE("test invake pinf main") {
-	init_subject("Hello world!\nEXIT\ndump");
+SUITE_START("snubber test");
 
+BEFORE_ALL() {
+	return init_subject("Hello world!\nEXIT\ndump");
+}
+
+AFTER_ALL() {
+	return close_subject();
+}
+
+SUITE_CASE("test invake pinf main") {
 	CU_ASSERT_EQUAL(invoke_subject(snubber_main), 100);
 	CU_ASSERT_PTR_EQUAL(input_stdin, actxt.input_stream);
 	CU_ASSERT_PTR_EQUAL(input_stdout, actxt.output_stream);
 	CU_ASSERT_PTR_EQUAL(input_stderr, actxt.error_stream);
-
-	close_subject();
 }
 
 SUITE_END(snubber);

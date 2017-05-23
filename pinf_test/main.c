@@ -5,13 +5,17 @@
 
 SUITE_START("pinf test");
 
-SUITE_CASE("should pass through line and exit when got EXIT") {
-	init_subject("Hello world!\nEXIT\ndump");
+BEFORE_ALL() {
+	return init_subject("Hello world!\nEXIT\ndump");
+}
 
+AFTER_ALL() {
+	return close_subject();
+}
+
+SUITE_CASE("should pass through line and exit when got EXIT") {
 	CU_ASSERT_EQUAL(pinf_main(actxt.input_stream, actxt.output_stream, actxt.error_stream), 0);
 	CU_ASSERT_STRING_EQUAL(std_out, "Hello world!\n")
-
-	close_subject();
 }
 
 SUITE_END(pinf_test);
