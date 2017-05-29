@@ -27,7 +27,7 @@ static int stub_stream_avformat_find_stream_info(AVFormatContext *ic, AVDictiona
 	return 0;
 }
 
-static void before_case() {
+BEFORE_EACH() {
 	init_subject("", "-v", "0", "test.avi");
 	format_context.nb_streams = 0;
 
@@ -35,15 +35,14 @@ static void before_case() {
 	init_mock_function(avformat_open_input, stub_avformat_open_input);
 	init_mock_function(avformat_find_stream_info, stub_stream_avformat_find_stream_info);
 	init_mock_function(avformat_close_input, NULL);
+	return 0;
 }
 
-static void after_case() {
-	close_subject();
+AFTER_EACH() {
+	return close_subject();
 }
 
 SUITE_CASE("should called av* method when open video file and set video track") {
-	before_case();
-
 	subject;
 
 	CU_EXPECT_CALLED_ONCE(av_register_all);
@@ -56,18 +55,13 @@ SUITE_CASE("should called av* method when open video file and set video track") 
 
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 	CU_EXPECT_CALLED_WITH(avformat_close_input, 1, params_of(avformat_close_input, 1));
-
-	after_case();
 }
 
 SUITE_CASE("integration test for missing video file argument") {
-	before_case();
 	init_subject("");
 
 	CU_ASSERT_EQUAL(subject, -1);
 	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: require video file\n");
-
-	after_case();
 }
 
 static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options) {
@@ -83,14 +77,11 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 }
 
 SUITE_CASE("specific stream should be vedio stream") {
-	before_case();
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
 	CU_ASSERT_EQUAL(subject, -1);
 	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: No video stream at 1\n");
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
-
-	after_case();
 }
 
 SUITE_END(test_vdecode_main)

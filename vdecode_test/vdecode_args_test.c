@@ -10,11 +10,11 @@ static vdecode_args args;
 SUITE_START("vdecode_args");
 
 BEFORE_EACH() {
-	init_subject("");
+	return init_subject("");
 }
 
 AFTER_EACH() {
-	close_subject();
+	return close_subject();
 }
 
 SUITE_CASE("should got error message when invalid arguments") {
