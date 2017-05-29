@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <CUnit/Basic.h>
-#include "testutil/testutil.h"
+#include <cunitexd.h>
 #include "mock_ffmpeg/mock_ffmpeg.h"
 #include "vdecode/vdecode.h"
 
 static AVFormatContext format_context;
-static app_context ctxt;
 
-#define subject invoke_main(&ctxt, vdecode_main)
+#define subject invoke_subject(vdecode_main)
+
+SUITE_START("vdecode main process");
 
 static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
 	*ps = &format_context;
@@ -28,8 +28,7 @@ static int stub_stream_avformat_find_stream_info(AVFormatContext *ic, AVDictiona
 }
 
 static void before_case() {
-	set_main_args("-v", "0", "test.avi", "");
-	init_app_context(&ctxt, "");
+	init_subject("", "-v", "0", "test.avi");
 	format_context.nb_streams = 0;
 
 	init_mock_function(av_register_all, NULL);
@@ -39,10 +38,10 @@ static void before_case() {
 }
 
 static void after_case() {
-	close_app_context(&ctxt);
+	close_subject();
 }
 
-static void open_video_file_and_video_track() {
+SUITE_CASE("should called av* method when open video file and set video track") {
 	before_case();
 
 	subject;
@@ -61,12 +60,12 @@ static void open_video_file_and_video_track() {
 	after_case();
 }
 
-static void miss_video_file_should_return_error() {
+SUITE_CASE("integration test for missing video file argument") {
 	before_case();
-	set_main_args("");
+	init_subject("");
 
 	CU_ASSERT_EQUAL(subject, -1);
-	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Error[vdecode]: require video file\n");
+	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: require video file\n");
 
 	after_case();
 }
@@ -83,20 +82,15 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 	return 0;
 }
 
-static void set_video_track() {
+SUITE_CASE("specific stream should be vedio stream") {
 	before_case();
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
 	CU_ASSERT_EQUAL(subject, -1);
-	CU_ASSERT_STRING_EQUAL(error_buffer(&ctxt), "Error[vdecode]: No video stream at 1\n");
+	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: No video stream at 1\n");
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 
 	after_case();
 }
 
-void test_vdecode_main() {
-	CU_pSuite suite = create_suite("vdecode test", NULL, NULL);
-	add_case(suite, open_video_file_and_video_track);
-	add_case(suite, miss_video_file_should_return_error);
-	add_case(suite, set_video_track);
-}
+SUITE_END(test_vdecode_main)

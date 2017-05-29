@@ -3,13 +3,13 @@
 #include <cunitexd.h>
 #include "pinf/pinf.h"
 
-SUITE_START("pinf test");
+SUITE_START("libpinf");
 
-BEFORE_ALL() {
+BEFORE_EACH() {
 	return init_subject("Hello world!\nEXIT\ndump");
 }
 
-AFTER_ALL() {
+AFTER_EACH() {
 	return close_subject();
 }
 

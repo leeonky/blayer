@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([blayer], [1.0.0], [leeonky@gmail.com])
-AC_CONFIG_SRCDIR([test.h])
+AC_CONFIG_SRCDIR([snubber])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
 
@@ -39,7 +39,6 @@ AM_COND_IF([ENV_TEST], [],
 # Testing Makefile
 AM_COND_IF([ENV_PRD], [],
 	  [AC_CONFIG_FILES([
-	   testutil/Makefile
 	   mock_ffmpeg/Makefile
 	   pinf_test/Makefile
 	   snubber_test/Makefile

@@ -12,13 +12,13 @@ int pinf_main(FILE *stdin, FILE *stdout, FILE *stderr) {
 	return 100;
 }
 
-SUITE_START("snubber test");
+SUITE_START("snubber");
 
-BEFORE_ALL() {
+BEFORE_EACH() {
 	return init_subject("Hello world!\nEXIT\ndump");
 }
 
-AFTER_ALL() {
+AFTER_EACH() {
 	return close_subject();
 }
 
