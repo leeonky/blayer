@@ -13,9 +13,13 @@ AFTER_EACH() {
 	return close_subject();
 }
 
+SUBJECT(int) {
+	return pinf_main(actxt.input_stream, actxt.output_stream, actxt.error_stream);
+}
+
 SUITE_CASE("should pass through line and exit when got EXIT") {
-	CU_ASSERT_EQUAL(pinf_main(actxt.input_stream, actxt.output_stream, actxt.error_stream), 0);
-	CU_ASSERT_STRING_EQUAL(std_out, "Hello world!\n")
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+	CUE_ASSERT_STDOUT_EQ("Hello world!\n");
 }
 
 SUITE_END(pinf_test);

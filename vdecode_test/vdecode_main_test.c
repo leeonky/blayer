@@ -6,7 +6,7 @@
 
 static AVFormatContext format_context;
 
-#define subject invoke_subject(vdecode_main)
+#define subject_i invoke_subject(vdecode_main)
 
 SUITE_START("vdecode main process");
 
@@ -43,7 +43,7 @@ AFTER_EACH() {
 }
 
 SUITE_CASE("should called av* method when open video file and set video track") {
-	subject;
+	subject_i;
 
 	CU_EXPECT_CALLED_ONCE(av_register_all);
 
@@ -60,7 +60,7 @@ SUITE_CASE("should called av* method when open video file and set video track") 
 SUITE_CASE("integration test for missing video file argument") {
 	init_subject("");
 
-	CU_ASSERT_EQUAL(subject, -1);
+	CU_ASSERT_EQUAL(subject_i, -1);
 	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: require video file\n");
 }
 
@@ -79,7 +79,7 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 SUITE_CASE("specific stream should be vedio stream") {
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
-	CU_ASSERT_EQUAL(subject, -1);
+	CU_ASSERT_EQUAL(subject_i, -1);
 	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: No video stream at 1\n");
 	CU_EXPECT_CALLED_ONCE(avformat_close_input);
 }
