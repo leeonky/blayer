@@ -28,9 +28,9 @@ SUBJECT(int) {
 
 SUITE_CASE("test invake pinf main") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(100);
-	CUE_ASSERT_PTR_EQUAL(input_stdin, actxt.input_stream);
-	CUE_ASSERT_PTR_EQUAL(input_stdout, actxt.output_stream);
-	CUE_ASSERT_PTR_EQUAL(input_stderr, actxt.error_stream);
+	CUE_ASSERT_PTR_EQ(input_stdin, actxt.input_stream);
+	CUE_ASSERT_PTR_EQ(input_stdout, actxt.output_stream);
+	CUE_ASSERT_PTR_EQ(input_stderr, actxt.error_stream);
 }
 
 SUITE_END(snubber);

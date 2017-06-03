@@ -5,8 +5,6 @@
 
 static vdecode_args args;
 
-#define subject_i process_args(&args, actxt.argc, actxt.argv, actxt.error_stream)
-
 SUITE_START("vdecode_args");
 
 BEFORE_EACH() {

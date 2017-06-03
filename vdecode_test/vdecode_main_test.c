@@ -6,8 +6,6 @@
 
 static AVFormatContext format_context;
 
-#define subject_i invoke_subject(vdecode_main)
-
 SUITE_START("vdecode main process");
 
 static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
@@ -42,26 +40,29 @@ AFTER_EACH() {
 	return close_subject();
 }
 
+SUBJECT(int) {
+	return invoke_subject(vdecode_main);
+}
+
 SUITE_CASE("should called av* method when open video file and set video track") {
-	subject_i;
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CU_EXPECT_CALLED_ONCE(av_register_all);
+	CUE_EXPECT_CALLED_ONCE(av_register_all);
 
-	CU_EXPECT_CALLED_ONCE(avformat_open_input);
-	CU_EXPECT_CALLED_WITH_STRING(avformat_open_input, 2, "test.avi");
+	CUE_EXPECT_CALLED_ONCE(avformat_open_input);
+	CUE_EXPECT_CALLED_WITH_STRING(avformat_open_input, 2, "test.avi");
 
-	CU_EXPECT_CALLED_ONCE(avformat_find_stream_info);
-	CU_EXPECT_CALLED_WITH(avformat_find_stream_info, 1, &format_context);
+	CUE_EXPECT_CALLED_ONCE(avformat_find_stream_info);
+	CUE_EXPECT_CALLED_WITH_PTR(avformat_find_stream_info, 1, &format_context);
 
-	CU_EXPECT_CALLED_ONCE(avformat_close_input);
-	CU_EXPECT_CALLED_WITH(avformat_close_input, 1, params_of(avformat_close_input, 1));
+	CUE_EXPECT_CALLED_ONCE(avformat_close_input);
 }
 
 SUITE_CASE("integration test for missing video file argument") {
 	init_subject("");
 
-	CU_ASSERT_EQUAL(subject_i, -1);
-	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: require video file\n");
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+	CUE_ASSERT_STDERR_EQ("Error[vdecode]: require video file\n");
 }
 
 static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options) {
@@ -79,9 +80,9 @@ static int audio_stream_avformat_find_stream_info(AVFormatContext *ic, AVDiction
 SUITE_CASE("specific stream should be vedio stream") {
 	init_mock_function(avformat_find_stream_info, audio_stream_avformat_find_stream_info);
 
-	CU_ASSERT_EQUAL(subject_i, -1);
-	CU_ASSERT_STRING_EQUAL(std_err, "Error[vdecode]: No video stream at 1\n");
-	CU_EXPECT_CALLED_ONCE(avformat_close_input);
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+	CUE_ASSERT_STDERR_EQ( "Error[vdecode]: No video stream at 1\n");
+	CUE_EXPECT_CALLED_ONCE(avformat_close_input);
 }
 
 SUITE_END(test_vdecode_main)
