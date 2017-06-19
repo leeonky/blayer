@@ -54,7 +54,8 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 		if(packet.stream_index == args.video_index) {
 			avcodec_send_packet(codec_context, &packet);
 			if(!avcodec_receive_frame(codec_context, frame)) {
-				fprintf(stdout, "video:: width:%d height:%d\n", frame->width, frame->height, av_frame_get_best_effort_timestamp(frame));
+				int64_t pts = av_frame_get_best_effort_timestamp(frame)-stream->start_time;
+				fprintf(stdout, "video_frame:: width:%d height:%d format:%d pts:%lld\n" , frame->width, frame->height, frame->format, pts*stream->time_base.num*1000/stream->time_base.den);
 			}
 			continue;
 		}

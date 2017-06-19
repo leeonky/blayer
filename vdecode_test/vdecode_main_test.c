@@ -29,7 +29,7 @@ static int stub_avformat_find_stream_info(AVFormatContext *ic, AVDictionary **op
 	streams[0].codecpar = &codec_parameters;
 	streams[0].time_base.num = 1;
 	streams[0].time_base.den = 100;
-	streams[0].start_time = 1000000;
+	streams[0].start_time = 1000;
 
 	codec_parameters.codec_type = AVMEDIA_TYPE_VIDEO;
 	codec_parameters.codec_id = codec_id;
@@ -176,12 +176,12 @@ SUITE_CASE("decode expected stream packet data but did not get a frame") {
 static int stub_avcodec_receive_frame_got_a_video_frame(AVCodecContext *codec_context, AVFrame *frame) {
 	frame->width = 300;
 	frame->height = 200;
-	frame->format = AV_PIX_FMT_YUV420P;
+	frame->format = AV_PIX_FMT_YUV422P;
 	return 0;
 }
 
 static int stub_av_frame_get_best_effort_timestamp(AVFrame *frame) {
-	return 100;
+	return 10000;
 }
 
 SUITE_CASE("should out put frame info if got a frame in decode") {
@@ -193,7 +193,7 @@ SUITE_CASE("should out put frame info if got a frame in decode") {
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("video:: width:300 height:200\n");
+	CUE_ASSERT_STDOUT_EQ("video_frame:: width:300 height:200 format:%d pts:90000\n", AV_PIX_FMT_YUV422P);
 }
 
 SUITE_END(test_vdecode_main)
