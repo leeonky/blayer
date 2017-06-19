@@ -28,23 +28,42 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 
 int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
 	int res = 0;
-	AVFormatContext *avformat_context = NULL;
 	vdecode_args args;
 
-	if(process_args(&args, argc, argv, stderr))
-		return -1;
+	AVFormatContext *context = NULL;
+	AVCodecContext *codec_context = NULL;
+
+	process_args(&args, argc, argv, stderr);
 
 	av_register_all();
-	avformat_open_input(&avformat_context, args.file_name, NULL, NULL);
-	avformat_find_stream_info(avformat_context, NULL);
-	if (!avformat_context->nb_streams) {
-		fprintf(stderr, "Warning[vdecode]: no streams in file\n");
-	} else {
-		if (avformat_context->streams[args.video_index]->codecpar->codec_type != AVMEDIA_TYPE_VIDEO) {
-			fprintf(stderr, "Error[vdecode]: No video stream at 1\n");
-			res = -1;
+
+	avformat_open_input(&context, args.file_name, NULL, NULL);
+
+	avformat_find_stream_info(context, NULL);
+
+	AVStream *stream = context->streams[args.video_index];
+	AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+	codec_context = avcodec_alloc_context3(codec);
+	avcodec_parameters_to_context(codec_context, stream->codecpar);
+	avcodec_open2(codec_context, codec, NULL);
+
+	AVFrame *frame = av_frame_alloc();
+	AVPacket packet;
+
+	while(av_read_frame(context, &packet)>=0) {
+		if(packet.stream_index == args.video_index) {
+			avcodec_send_packet(codec_context, &packet);
+			if(!avcodec_receive_frame(codec_context, frame)) {
+				fprintf(stdout, "video:: width:%d height:%d\n", frame->width, frame->height, av_frame_get_best_effort_timestamp(frame));
+			}
+			continue;
 		}
 	}
-	avformat_close_input(&avformat_context);
+
+	av_packet_unref(&packet);
+	av_frame_free(&frame);
+	avcodec_close(codec_context);
+	avcodec_free_context(&codec_context);
+	avformat_close_input(&context);
 	return res;
 }
