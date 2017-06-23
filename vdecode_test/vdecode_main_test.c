@@ -83,6 +83,11 @@ BEFORE_EACH() {
 	return 0;
 }
 
+AFTER_EACH() {
+	close_subject();
+	return 0;
+}
+
 SUITE_CASE("should called av* method when open video file and set video track") {
 	init_mock_function(av_read_frame, stub_av_read_frame_at_the_end);
 

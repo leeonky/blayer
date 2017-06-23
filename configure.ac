@@ -33,6 +33,7 @@ AM_COND_IF([ENV_TEST], [],
 	  [AC_CONFIG_FILES([
 	   pinf/Makefile
 	   snubber/Makefile
+	   wrpffp/Makefile
 	   vdecode/Makefile
 	   ])])
 
@@ -42,6 +43,7 @@ AM_COND_IF([ENV_PRD], [],
 	   mock_ffmpeg/Makefile
 	   pinf_test/Makefile
 	   snubber_test/Makefile
+	   wrpffp_test/Makefile
 	   vdecode_test/Makefile
 	   ])])
 

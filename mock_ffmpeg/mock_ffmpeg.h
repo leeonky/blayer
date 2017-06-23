@@ -22,5 +22,6 @@ extern_mock_void_function_1(av_packet_unref, AVPacket *);
 extern_mock_void_function_1(avcodec_free_context, AVCodecContext **);
 extern_mock_void_function_1(av_frame_free, AVFrame **);
 extern_mock_void_function_1(avformat_close_input, AVFormatContext **);
+extern_mock_function_3(int, av_strerror, int, char *, size_t);
 
 #endif

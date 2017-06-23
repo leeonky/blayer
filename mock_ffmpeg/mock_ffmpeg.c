@@ -17,3 +17,4 @@ mock_void_function_1(av_packet_unref, AVPacket *);
 mock_void_function_1(avcodec_free_context, AVCodecContext **);
 mock_void_function_1(av_frame_free, AVFrame **);
 mock_void_function_1(avformat_close_input, AVFormatContext **);
+mock_function_3(int, av_strerror, int, char *, size_t);
