@@ -4,7 +4,7 @@
 static int print_error(int no, FILE *stderr) {
 	char buffer[1024];
 	av_strerror(no, buffer, sizeof(buffer));
-	fprintf(stderr, "Error[wrpffp]: %s\n", buffer);
+	fprintf(stderr, "Error[libwrpffp]: %s\n", buffer);
 	return -1;
 }
 
@@ -48,3 +48,29 @@ int ffmpeg_find_stream(ffmpeg *ffp, enum AVMediaType type, int track, void *arg,
 	}
 	return res;
 }
+
+int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
+	int res = 0, ret;
+	ffmpeg_decoder decoder;
+	AVCodec *codec;
+	if(codec = avcodec_find_decoder(stream->stream->codecpar->codec_id)) {
+		if (decoder.codec_context = avcodec_alloc_context3(codec)) {
+			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
+					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
+				res = process(stream, &decoder, arg, io_s);
+				avcodec_close(decoder.codec_context);
+			} else {
+				res = print_error(ret, io_s->stderr);
+			}
+			avcodec_free_context(&decoder.codec_context);
+		} else {
+			res = -1;
+			fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVCodecContext\n");
+		}
+	} else {
+		res = -1;
+		fprintf(io_s->stderr, "Error[libwrpffp]: failed to find decoder\n");
+	}
+	return res;
+}
+

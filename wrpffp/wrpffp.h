@@ -15,9 +15,16 @@ typedef struct ffmpeg_stream {
 	AVStream *stream;
 } ffmpeg_stream;
 
+typedef struct ffmpeg_decoder {
+	AVCodecContext *codec_context;
+
+} ffmpeg_decoder;
+
 extern int ffmpeg_main(const char *, void *, int(*)(ffmpeg *, void *, io_stream *), io_stream *);
 
 extern int ffmpeg_find_stream(ffmpeg *, enum AVMediaType, int, void *, int(*)(ffmpeg_stream *, void *, io_stream *), io_stream *);
+
+extern int ffmpeg_decoding(ffmpeg_stream *, void *, int(*)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *);
 
 #endif
 

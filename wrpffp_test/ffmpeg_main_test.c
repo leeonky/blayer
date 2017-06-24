@@ -12,11 +12,6 @@ static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInp
 	return 0;
 }
 
-static int stub_av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
-	snprintf(errbuf, errbuf_size, "%d", errnum);
-	return 0;
-}
-
 static int int_arg;
 
 BEFORE_EACH() {
@@ -26,7 +21,6 @@ BEFORE_EACH() {
 	init_mock_function(avformat_open_input, stub_avformat_open_input);
 	init_mock_function(avformat_find_stream_info, NULL);
 	init_mock_function(avformat_close_input, NULL);
-	init_mock_function(av_strerror, stub_av_strerror);
 	return 0;
 }
 
@@ -79,7 +73,7 @@ SUITE_CASE("should output avformat_open_input error message and exit") {
 
 	CUE_EXPECT_NEVER_CALLED(avformat_close_input);
 
-	CUE_ASSERT_STDERR_EQ("Error[wrpffp]: -2\n");
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -2\n");
 
 	CUE_ASSERT_EQ(int_arg, 0);
 }
@@ -100,7 +94,7 @@ SUITE_CASE("should output avformat_find_stream_info error message and exit") {
 
 	CUE_EXPECT_CALLED_ONCE(avformat_close_input);
 
-	CUE_ASSERT_STDERR_EQ("Error[wrpffp]: -2\n");
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -2\n");
 
 	CUE_ASSERT_EQ(int_arg, 0);
 }
