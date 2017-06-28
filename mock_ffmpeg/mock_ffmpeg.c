@@ -13,6 +13,7 @@ mock_function_2(int, av_read_frame, AVFormatContext *, AVPacket *);
 mock_function_2(int, avcodec_send_packet, AVCodecContext *, const AVPacket *);
 mock_function_2(int, avcodec_receive_frame, AVCodecContext *, AVFrame *);
 mock_function_1(int64_t, av_frame_get_best_effort_timestamp, const AVFrame *);
+mock_void_function_1(av_init_packet, AVPacket *);
 mock_void_function_1(av_packet_unref, AVPacket *);
 mock_void_function_1(avcodec_free_context, AVCodecContext **);
 mock_void_function_1(av_frame_free, AVFrame **);

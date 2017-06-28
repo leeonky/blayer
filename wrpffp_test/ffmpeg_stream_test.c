@@ -4,8 +4,6 @@
 #include "mock_ffmpeg/mock_ffmpeg.h"
 #include "wrpffp/wrpffp.h"
 
-SUITE_START("ffmpeg_stream_test");
-
 static ffmpeg ffp; 
 static AVFormatContext format_context;
 static AVStream streams[2];
@@ -15,6 +13,8 @@ static AVCodecParameters codec_parameters[2];
 static int int_arg = 0;
 static int track = -1;
 static int (*test_main)(ffmpeg_stream *, void *, io_stream *);
+
+SUITE_START("ffmpeg_stream_test");
 
 static int default_process(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	int_arg = 100;
@@ -48,6 +48,8 @@ BEFORE_EACH() {
 
 	init_subject("");
 	init_mock_function(av_get_media_type_string, stub_av_get_media_type_string);
+	init_mock_function(av_init_packet, NULL);
+	init_mock_function(av_packet_unref, NULL);
 	return 0;
 }
 
@@ -64,6 +66,8 @@ SUBJECT(int) {
 static int assert_process(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	int_arg = 200;
 	CUE_ASSERT_PTR_EQ(stream->stream, &streams[0]);
+
+	CUE_EXPECT_NEVER_CALLED(av_packet_unref);
 	return 0;
 }
 
@@ -71,6 +75,12 @@ SUITE_CASE("should get stream info by first track of type") {
 	test_main = assert_process;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(av_init_packet);
+
+	CUE_EXPECT_CALLED_ONCE(av_packet_unref);
+
+	CUE_ASSERT_PTR_EQ(params_of(av_init_packet, 1), params_of(av_packet_unref, 1));
 
 	CUE_ASSERT_EQ(int_arg, 200);
 }
@@ -98,3 +108,46 @@ SUITE_CASE("no matched stream") {
 }
 
 SUITE_END(ffmpeg_stream_test);
+
+SUITE_START("ffmpeg_stream_read_test");
+
+static ffmpeg_stream ffst = {};
+static int read_times = 0;
+
+BEFORE_EACH() {
+	ffst.format_context = &format_context;
+	ffst.stream = &streams[0];
+
+	streams[0].index = 1;
+
+	read_times = 0;
+
+	init_subject("");
+	init_mock_function(av_read_frame, NULL);
+	return 0;
+}
+
+AFTER_EACH() {
+	close_subject();
+	return 0;
+}
+
+static int stub_av_read_frame_index_in_sequence(AVFormatContext *format_context, AVPacket *packet) {
+	packet->stream_index = read_times++;
+	return 0;
+}
+
+SUBJECT(int) {
+	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
+	return ffmpeg_stream_read(&ffst, &io_s);
+}
+
+SUITE_CASE("get a packet from stream") {
+	init_mock_function(av_read_frame, stub_av_read_frame_index_in_sequence);
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_EQ(ffst.packet.stream_index, 1);
+}
+
+SUITE_END(ffmpeg_stream_read_test);

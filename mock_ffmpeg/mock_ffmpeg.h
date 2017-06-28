@@ -18,6 +18,7 @@ extern_mock_function_2(int, av_read_frame, AVFormatContext *, AVPacket *);
 extern_mock_function_2(int, avcodec_send_packet, AVCodecContext *, const AVPacket *);
 extern_mock_function_2(int, avcodec_receive_frame, AVCodecContext *, AVFrame *);
 extern_mock_function_1(int64_t, av_frame_get_best_effort_timestamp, const AVFrame *);
+extern_mock_void_function_1(av_init_packet, AVPacket *);
 extern_mock_void_function_1(av_packet_unref, AVPacket *);
 extern_mock_void_function_1(avcodec_free_context, AVCodecContext **);
 extern_mock_void_function_1(av_frame_free, AVFrame **);

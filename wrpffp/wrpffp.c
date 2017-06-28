@@ -43,10 +43,29 @@ int ffmpeg_find_stream(ffmpeg *ffp, enum AVMediaType type, int track, void *arg,
 		fprintf(io_s->stderr, "Error[libwrpffp]: %s stream %d doesn't exist", av_get_media_type_string(type), track);
 		return -1;
 	}
+	av_init_packet(&stream.packet);
 	if (process) {
 		res = process(&stream, arg, io_s);
 	}
+	av_packet_unref(&stream.packet);
 	return res;
+}
+
+typedef struct find_stream_args {
+	enum AVMediaType type;
+	int track;
+	void *arg;
+	int(*process)(ffmpeg_stream *, void *, io_stream *);
+} find_stream_args;
+
+static int find_stream_process(ffmpeg *ffp, void *arg, io_stream *io_s) {
+	find_stream_args *stream_arg = (find_stream_args *)arg;
+	return ffmpeg_find_stream(ffp, stream_arg->type, stream_arg->track, stream_arg->arg, stream_arg->process, io_s);
+}
+
+int ffmpeg_main_stream(const char *file, enum AVMediaType type, int track, void *arg, int(*process)(ffmpeg_stream *, void *, io_stream *), io_stream *io_s) {
+	find_stream_args stream_arg = {type, track, arg, process};
+	return ffmpeg_main(file, &stream_arg, find_stream_process, io_s);
 }
 
 int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
@@ -57,7 +76,9 @@ int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_strea
 		if (decoder.codec_context = avcodec_alloc_context3(codec)) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
-				res = process(stream, &decoder, arg, io_s);
+				if (process) {
+					res = process(stream, &decoder, arg, io_s);
+				}
 				avcodec_close(decoder.codec_context);
 			} else {
 				res = print_error(ret, io_s->stderr);
@@ -74,3 +95,10 @@ int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_strea
 	return res;
 }
 
+int ffmpeg_stream_read(ffmpeg_stream *stream, io_stream *io_s) {
+	int res = 0;
+	while((!(res = av_read_frame(stream->format_context, &stream->packet)))
+			&& stream->stream->index != stream->packet.stream_index)
+		;
+	return res;
+}

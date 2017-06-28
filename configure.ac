@@ -31,6 +31,7 @@ AC_CONFIG_FILES([Makefile])
 # Production Makefile
 AM_COND_IF([ENV_TEST], [],
 	  [AC_CONFIG_FILES([
+	   bputil/Makefile
 	   pinf/Makefile
 	   snubber/Makefile
 	   wrpffp/Makefile
@@ -45,6 +46,7 @@ AM_COND_IF([ENV_PRD], [],
 	   snubber_test/Makefile
 	   wrpffp_test/Makefile
 	   vdecode_test/Makefile
+	   bputil_test/Makefile
 	   ])])
 
 AC_OUTPUT
