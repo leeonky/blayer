@@ -2,18 +2,23 @@
 #include <unistd.h>
 #include "bputil.h"
 
-int shrb_create(shm_rbuf *rb, size_t bits, size_t size) {
+int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_rbuf *, void *, io_stream *), io_stream *io_s) {
+	shm_rbuf rbuf = {};
 	int res = 0;
 	size_t page_size = getpagesize();
-	rb->element_size = (size+page_size-1)/page_size*page_size;
-	rb->mask = (1<<bits)-1;
-	rb->index = 0;
-	if((rb->shm_id = shmget(IPC_PRIVATE, rb->element_size * (rb->mask+1), 0666 | IPC_CREAT)) > 0) {
-		rb->buffer = shmat(rb->shm_id, NULL, 0);
-		if (rb->buffer == (void *)-1) {
-			shmctl(rb->shm_id, IPC_RMID, NULL);
+	rbuf.element_size = (size+page_size-1)/page_size*page_size;
+	rbuf.mask = (1<<bits)-1;
+	rbuf.index = 0;
+	if ((rbuf.shm_id = shmget(IPC_PRIVATE, rbuf.element_size * (rbuf.mask+1), 0666 | IPC_CREAT)) > 0) {
+		if ((rbuf.buffer = shmat(rbuf.shm_id, NULL, 0)) != (void *)-1) {
+			if (process) {
+				res = process(&rbuf, arg, io_s);
+			}
+			shmdt(rbuf.buffer);
+		} else {
 			res = -1;
 		}
+		shmctl(rbuf.shm_id, IPC_RMID, NULL);
 	} else {
 		res = -1;
 	}

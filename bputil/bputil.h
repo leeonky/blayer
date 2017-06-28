@@ -22,8 +22,8 @@ typedef struct shm_rbuf {
 	int mask;
 } shm_rbuf;
 
-int shrb_create(shm_rbuf *, size_t, size_t);
-
 void *shrb_allocate(shm_rbuf *);
+
+int shrb_new(size_t, size_t, void *, int(*)(shm_rbuf *, void *, io_stream *), io_stream *);
 
 #endif
