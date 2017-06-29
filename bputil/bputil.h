@@ -14,16 +14,16 @@ typedef struct io_stream {
 	p->stdin = stdin; \
 } while(0);
 
-typedef struct shm_rbuf {
+typedef struct shm_cbuf {
 	int shm_id;
 	char *buffer;
 	size_t element_size;
 	int index;
 	int mask;
-} shm_rbuf;
+} shm_cbuf;
 
-void *shrb_allocate(shm_rbuf *);
+void *shrb_allocate(shm_cbuf *);
 
-int shrb_new(size_t, size_t, void *, int(*)(shm_rbuf *, void *, io_stream *), io_stream *);
+int shrb_new(size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);
 
 #endif

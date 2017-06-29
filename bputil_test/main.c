@@ -6,7 +6,7 @@ int main() {
 	init_test();
 
 	ADD_SUITE(io_stream_test);
-	ADD_SUITE(shm_rbuf_test);
+	ADD_SUITE(shm_cbuf_test);
 
 	return run_test();
 }
