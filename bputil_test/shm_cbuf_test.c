@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cunitexd.h>
 #include <sys/shm.h>
 #include <unistd.h>
+#include "mock_sys.h"
 #include "bputil/bputil.h"
 
-SUITE_START("shm_cbuf_test");
+SUITE_START("shm_cbuf_new_test");
 
 static int shmid = 100;
 
@@ -19,12 +19,6 @@ static char *buffer;
 void *stub_shmat(int shmid, const void *addr, int flag) {
 	return buffer;
 }
-
-mock_function_3(int, shmget, key_t, size_t, int);
-mock_function_3(void *, shmat, int, const void *, int);
-mock_function_3(int, shmctl, int, int, struct shmid_ds *);
-mock_function_1(int, shmdt, const void *);
-mock_function_1(char *, strerror, int);
 
 static int bits = 2;
 static size_t e_size = 100;
@@ -183,4 +177,47 @@ SUITE_CASE("allocate circle buffer") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 }
 
-SUITE_END(shm_cbuf_test);
+SUITE_END(shm_cbuf_new_test);
+
+SUITE_START("shm_cbuf_load_test");
+
+BEFORE_EACH() {
+	init_subject("", "-v", "0", "test.avi");
+	buffer = buffer_data;
+	cbuf_process = test_cbuf_process;
+
+	init_mock_function(shmget, stub_shmget);
+	init_mock_function(shmat, stub_shmat);
+	init_mock_function(shmdt, NULL);
+	init_mock_function(shmctl, NULL);
+	init_mock_function(strerror, stub_strerror);
+
+	return 0;
+}
+
+AFTER_EACH() {
+	return close_subject();
+}
+
+SUBJECT(int) {
+	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
+	return shrb_load(shmid, bits, e_size, &int_arg, cbuf_process, &io_s);
+}
+
+SUITE_CASE("load with shmid") {
+	e_size = getpagesize() - 1;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(shmat);
+	CUE_EXPECT_CALLED_WITH_INT(shmat, 1, shmid);
+	CUE_EXPECT_CALLED_WITH_INT(shmat, 2, 0);
+	CUE_EXPECT_CALLED_WITH_INT(shmat, 3, 0);
+
+	CUE_EXPECT_CALLED_ONCE(shmdt);
+	CUE_EXPECT_CALLED_WITH_INT(shmdt, 1, buffer);
+
+	CUE_ASSERT_EQ(int_arg, 100);
+}
+
+SUITE_END(shm_cbuf_load_test);
