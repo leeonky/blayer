@@ -62,21 +62,29 @@ BEGIN {
 	skip = 0
 	result_file = "/tmp/res.json"
 	system("rm " result_file)
+	not_test = 1
 }
 {
-	if (match($0, /Run Summary:/)) {
-		skip = 1
+	if (match($0, /^===========/)) {
+		not_test = 0
 	}
-	if (match($0, /^Suite: (.*)/, suite)) {
-		skip = 0
-	}
-	if (!skip) {
+	if(not_test) {
+		print $0
+	} else {
+		if (match($0, /Run Summary:/)) {
+			skip = 1
+		}
 		if (match($0, /^Suite: (.*)/, suite)) {
-			out_put_suite(suite[1])
-		} else if (is_in_suit() && match($0, /^  Test: (.*) \.\.\.(.*)$/, cases)) {
-			change_to_new_case(cases[1], cases[2])
-		} else if (is_in_case()) {
-			appent_test_result($0)
+			skip = 0
+		}
+		if (!skip) {
+			if (match($0, /^Suite: (.*)/, suite)) {
+				out_put_suite(suite[1])
+			} else if (is_in_suit() && match($0, /^  Test: (.*) \.\.\.(.*)$/, cases)) {
+				change_to_new_case(cases[1], cases[2])
+			} else if (is_in_case()) {
+				appent_test_result($0)
+			}
 		}
 	}
 }

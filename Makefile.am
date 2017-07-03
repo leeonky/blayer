@@ -1,7 +1,7 @@
 SUBDIRS = 
 
 if !ENV_PRD
-SUBDIRS += mock_ffmpeg bputil_test snubber_test pinf_test wrpffp_test vdecode_test
+SUBDIRS += mock_ffmpeg mock_sys bputil_test snubber_test pinf_test wrpffp_test vdecode_test
 endif
 
 if !ENV_TEST

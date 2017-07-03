@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/shm.h>
 #include <unistd.h>
-#include "mock_sys.h"
+#include "mock_sys/mock_sys.h"
 #include "bputil/bputil.h"
 
 SUITE_START("shm_cbuf_new_test");
