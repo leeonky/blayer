@@ -39,6 +39,7 @@ static AVStream *find_stream(AVFormatContext *format_context, enum AVMediaType t
 int ffmpeg_find_stream(ffmpeg *ffp, enum AVMediaType type, int track, void *arg, int(*process)(ffmpeg_stream *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	ffmpeg_stream stream = {};
+	stream.format_context = ffp->format_context;
 	if (!(stream.stream = find_stream(ffp->format_context, type, (track<0 ? 0 : track)))) {
 		fprintf(io_s->stderr, "Error[libwrpffp]: %s stream %d doesn't exist", av_get_media_type_string(type), track);
 		return -1;

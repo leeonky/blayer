@@ -68,6 +68,8 @@ static int assert_process(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	CUE_ASSERT_PTR_EQ(stream->stream, &streams[0]);
 
 	CUE_EXPECT_NEVER_CALLED(av_packet_unref);
+
+	CUE_ASSERT_PTR_EQ(stream->format_context, &format_context);
 	return 0;
 }
 

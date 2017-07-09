@@ -1,6 +1,7 @@
 #include <libavformat/avformat.h>
 #include <getopt.h>
 #include "vdecode.h"
+#include "wrpffp/wrpffp.h"
 
 int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	args->file_name = NULL;
@@ -26,45 +27,29 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	return 0;
 }
 
-int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
-	int res = 0;
-	vdecode_args args;
 
-	AVFormatContext *context = NULL;
-	AVCodecContext *codec_context = NULL;
+static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
+	AVFrame *frame = av_frame_alloc();
+	while(ffmpeg_stream_read(stream, io_s)>=0) {
+		avcodec_send_packet(decoder->codec_context, &stream->packet);
+		if(!avcodec_receive_frame(decoder->codec_context, frame)) {
+			int64_t pts = av_frame_get_best_effort_timestamp(frame)-stream->stream->start_time;
+			fprintf(io_s->stdout, "video_frame:: width:%d height:%d format:%d pts:%lld\n" , frame->width, frame->height, frame->format, pts*stream->stream->time_base.num*1000/stream->stream->time_base.den);
+		}
+	}
+	av_frame_free(&frame);
+	return 0;
+}
+
+static int process_video_stream(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
+	return ffmpeg_decoding(stream, arg, decoding_video_stream, io_s);
+}
+
+int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
+	vdecode_args args;
+	io_stream io_s = {stdin, stdout, stderr};
 
 	process_args(&args, argc, argv, stderr);
 
-	av_register_all();
-
-	avformat_open_input(&context, args.file_name, NULL, NULL);
-
-	avformat_find_stream_info(context, NULL);
-
-	AVStream *stream = context->streams[args.video_index];
-	AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
-	codec_context = avcodec_alloc_context3(codec);
-	avcodec_parameters_to_context(codec_context, stream->codecpar);
-	avcodec_open2(codec_context, codec, NULL);
-
-	AVFrame *frame = av_frame_alloc();
-	AVPacket packet;
-
-	while(av_read_frame(context, &packet)>=0) {
-		if(packet.stream_index == args.video_index) {
-			avcodec_send_packet(codec_context, &packet);
-			if(!avcodec_receive_frame(codec_context, frame)) {
-				int64_t pts = av_frame_get_best_effort_timestamp(frame)-stream->start_time;
-				fprintf(stdout, "video_frame:: width:%d height:%d format:%d pts:%lld\n" , frame->width, frame->height, frame->format, pts*stream->time_base.num*1000/stream->time_base.den);
-			}
-			continue;
-		}
-	}
-
-	av_packet_unref(&packet);
-	av_frame_free(&frame);
-	avcodec_close(codec_context);
-	avcodec_free_context(&codec_context);
-	avformat_close_input(&context);
-	return res;
+	return ffmpeg_main_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.video_index, NULL, process_video_stream, &io_s);
 }
