@@ -103,3 +103,8 @@ int ffmpeg_stream_read(ffmpeg_stream *stream, io_stream *io_s) {
 		;
 	return res;
 }
+
+int ffmpeg_decoder_frame_size(ffmpeg_decoder *decoder) {
+	return av_image_get_buffer_size(decoder->codec_context->pix_fmt, decoder->codec_context->width, decoder->codec_context->height, 1);
+}
+

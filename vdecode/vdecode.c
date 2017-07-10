@@ -6,6 +6,7 @@
 int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	args->file_name = NULL;
 	args->video_index = -1;
+	args->video_buf_bits = 4;
 	int option_index = 0, c;
 	struct option long_options[] = {
 		{"video_index", required_argument, 0, 'v'},

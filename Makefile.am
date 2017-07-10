@@ -1,11 +1,11 @@
 SUBDIRS = 
 
-if !ENV_PRD
-SUBDIRS += mock_ffmpeg mock_sys bputil_test snubber_test pinf_test wrpffp_test vdecode_test
-endif
-
 if !ENV_TEST
 SUBDIRS += bputil pinf snubber wrpffp vdecode
+endif
+
+if !ENV_PRD
+SUBDIRS += mock_ffmpeg mock_sys bputil_test snubber_test pinf_test wrpffp_test vdecode_test
 endif
 
 EXTRA_DIST = test.sh

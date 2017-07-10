@@ -159,3 +159,30 @@ SUITE_CASE("open decoder failed") {
 }
 
 SUITE_END(ffmpeg_decoder_test);
+
+SUITE_START("ffmpeg_decoder_frame_size_test");
+
+static ffmpeg_decoder decoder = {};
+
+static int stub_av_image_get_buffer_size(enum AVPixelFormat format, int width, int height, int align) {
+	return 100;
+}
+
+SUITE_CASE("get frame buffer size") {
+	decoder.codec_context = &codec_context;
+	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
+	codec_context.width = 1920;
+	codec_context.height = 1080;
+
+	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
+
+	CUE_ASSERT_EQ(ffmpeg_decoder_frame_size(&decoder), 100);
+
+	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
+}
+
+SUITE_END(ffmpeg_decoder_frame_size_test);

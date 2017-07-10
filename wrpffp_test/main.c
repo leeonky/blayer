@@ -10,6 +10,7 @@ int main() {
 	ADD_SUITE(ffmpeg_stream_test);
 	ADD_SUITE(ffmpeg_stream_read_test);
 	ADD_SUITE(ffmpeg_decoder_test);
+	ADD_SUITE(ffmpeg_decoder_frame_size_test);
 
 	return run_test();
 }

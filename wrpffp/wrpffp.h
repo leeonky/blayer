@@ -29,5 +29,7 @@ extern int ffmpeg_decoding(ffmpeg_stream *, void *, int(*)(ffmpeg_stream *, ffmp
 
 extern int ffmpeg_stream_read(ffmpeg_stream *, io_stream *);
 
+extern int ffmpeg_decoder_frame_size(ffmpeg_decoder *);
+
 #endif
 

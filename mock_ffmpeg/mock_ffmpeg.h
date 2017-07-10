@@ -24,5 +24,6 @@ extern_mock_void_function_1(avcodec_free_context, AVCodecContext **);
 extern_mock_void_function_1(av_frame_free, AVFrame **);
 extern_mock_void_function_1(avformat_close_input, AVFormatContext **);
 extern_mock_function_1(const char *, av_get_media_type_string, enum AVMediaType);
+extern_mock_function_4(int, av_image_get_buffer_size, enum AVPixelFormat, int, int, int);
 
 #endif
