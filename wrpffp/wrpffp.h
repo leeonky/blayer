@@ -19,6 +19,10 @@ typedef struct ffmpeg_decoder {
 	AVFrame *frame;
 } ffmpeg_decoder;
 
+typedef struct ffmpeg_frame {
+	ffmpeg_decoder *decoder;
+} ffmpeg_frame;
+
 extern int ffmpeg_main(const char *, void *, int(*)(ffmpeg *, void *, io_stream *), io_stream *);
 
 extern int ffmpeg_find_stream(ffmpeg *, enum AVMediaType, int, void *, int(*)(ffmpeg_stream *, void *, io_stream *), io_stream *);
@@ -33,7 +37,7 @@ extern int ffmpeg_decoder_frame_size(ffmpeg_decoder *);
 
 extern int ffmpeg_stream_read_and_feed(ffmpeg_stream *, ffmpeg_decoder *, io_stream *);
 
-//extern int ffmpeg_decoder_decode_to(ffmpeg_decoder *, ffmpeg_stream *, void *, io_stream *);
+extern int ffmpeg_decoder_get_frame(ffmpeg_decoder *, void *, void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
 
 #endif
 

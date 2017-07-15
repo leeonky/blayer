@@ -123,6 +123,17 @@ int ffmpeg_stream_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, 
 	return res;
 }
 
+int ffmpeg_decoder_get_frame(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	ffmpeg_frame fffrm = {decoder};
+	AVFrame *frame = decoder->frame;
+	AVCodecContext *codec_context = decoder->codec_context;
+	av_image_fill_arrays(frame->data, frame->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1);
+	avcodec_receive_frame(codec_context, frame);
+	process(&fffrm, arg, io_s);
+	return res;
+}
+
 /*int ffmpeg_decoder_decode_to(ffmpeg_decoder *decoder, ffmpeg_stream *stream, void *buffer, io_stream *io_s) {*/
 	/*int res = 0, ret;*/
 	/*AVFrame *frame = decoder->frame;*/

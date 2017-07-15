@@ -11,7 +11,8 @@ int main() {
 	ADD_SUITE(ffmpeg_stream_read_test);
 	ADD_SUITE(ffmpeg_stream_read_and_feed_test);
 	ADD_SUITE(ffmpeg_decoder_test);
-	ADD_SUITE(ffmpeg_decoder_methods_test);
+	ADD_SUITE(ffmpeg_decoder_frame_size_test);
+	ADD_SUITE(ffmpeg_decoder_get_frame_test);
 
 	return run_test();
 }

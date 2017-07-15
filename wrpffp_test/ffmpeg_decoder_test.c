@@ -190,7 +190,7 @@ SUITE_CASE("failed to alloc frame") {
 
 SUITE_END(ffmpeg_decoder_test);
 
-SUITE_START("ffmpeg_decoder_methods_test");
+SUITE_START("ffmpeg_decoder_frame_size_test");
 
 static ffmpeg_decoder decoder;
 
@@ -227,52 +227,57 @@ SUITE_CASE("get frame buffer size") {
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
 }
 
-/*static ffmpeg_stream stream;*/
+SUITE_END(ffmpeg_decoder_frame_size_test);
 
-/*static int stub_av_image_fill_arrays() {*/
-	/*return 100;*/
-/*}*/
+SUITE_START("ffmpeg_decoder_get_frame_test");
 
-/*SUITE_CASE("decode to") {*/
-	/*void *p = &p;*/
-	/*io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };*/
-	/*init_mock_function(av_image_fill_arrays, stub_av_image_fill_arrays);*/
-	/*init_mock_function(avcodec_send_packet, NULL);*/
-	/*init_mock_function(avcodec_receive_frame, NULL);*/
+static char frame_buffer[100];
 
-	/*CUE_ASSERT_EQ(ffmpeg_decoder_decode_to(&decoder, &stream, p, &io_s), 0); */
+static int stub_avcodec_receive_frame_got_frame(AVCodecContext *codec_context, AVFrame *frame) {
+	return 0;
+}
 
-	/*CUE_EXPECT_CALLED_ONCE(av_image_fill_arrays);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 1, frame.data);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 2, frame.linesize);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 3, p);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 4, AV_PIX_FMT_YUVA420P10BE);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 5, 1920);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 6, 1080);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 7, 1);*/
+BEFORE_EACH() {
+	decoder.codec_context = &codec_context;
+	decoder.frame = &frame;
 
-	/*CUE_EXPECT_CALLED_ONCE(avcodec_send_packet);*/
+	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
+	codec_context.width = 1920;
+	codec_context.height = 1080;
+	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
 
-	/*CUE_EXPECT_CALLED_ONCE(avcodec_receive_frame);*/
-/*}*/
+	init_mock_function(av_image_fill_arrays, NULL);
+	init_mock_function(avcodec_receive_frame, stub_avcodec_receive_frame_got_frame);
+	return 0;
+}
 
-/*static int stub_av_image_fill_arrays_error() {*/
-	/*return -100;*/
-/*}*/
+static int process_frame(ffmpeg_frame *f, void *arg, io_stream *io_s) {
+	*(int *)arg = 100;
+	return 0;
+}
 
-/*SUITE_CASE("failed to fill buffer to frame") {*/
-	/*io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };*/
-	/*init_mock_function(av_image_fill_arrays, stub_av_image_fill_arrays_error);*/
-	/*init_mock_function(avcodec_send_packet, NULL);*/
-	/*init_mock_function(avcodec_receive_frame, NULL);*/
+SUBJECT(int) {
+	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
+	return ffmpeg_decoder_get_frame(&decoder, frame_buffer, &int_arg, process_frame, &io_s);
+}
 
-	/*CUE_ASSERT_EQ(ffmpeg_decoder_decode_to(&decoder, &stream, NULL, &io_s), -1); */
+SUITE_CASE("decode to frame and invoke process") {
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	/*CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -100\n");*/
+	CUE_EXPECT_CALLED_ONCE(av_image_fill_arrays);
+	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 1, frame.data);
+	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 2, frame.linesize);
+	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 3, frame_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 4, codec_context.pix_fmt);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 5, codec_context.width);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 6, codec_context.height);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 7, 1);
 
-	/*CUE_EXPECT_NEVER_CALLED(avcodec_send_packet);*/
+	CUE_EXPECT_CALLED_ONCE(avcodec_receive_frame);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 1, decoder.codec_context);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 2, decoder.frame);
 
-	/*CUE_EXPECT_NEVER_CALLED(avcodec_receive_frame);*/
-/*}*/
+	CUE_ASSERT_EQ(int_arg, 100);
+}
 
-SUITE_END(ffmpeg_decoder_methods_test);
+SUITE_END(ffmpeg_decoder_get_frame_test)
