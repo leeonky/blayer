@@ -43,9 +43,13 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	return res;
 }
 
+void *shrb_get(shm_cbuf *rb) {
+	return rb->buffer + rb->index*rb->element_size;
+}
+
 void *shrb_allocate(shm_cbuf *rb) {
 	rb->index = (rb->index+1) & rb->mask;
-	return rb->buffer + rb->index*rb->element_size;
+	return shrb_get(rb);
 }
 
 int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {

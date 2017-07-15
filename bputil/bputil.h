@@ -22,6 +22,8 @@ typedef struct shm_cbuf {
 	int mask;
 } shm_cbuf;
 
+void *shrb_get(shm_cbuf *);
+
 void *shrb_allocate(shm_cbuf *);
 
 int shrb_new(size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);

@@ -9,8 +9,9 @@ int main() {
 	ADD_SUITE(ffmpeg_main_test);
 	ADD_SUITE(ffmpeg_stream_test);
 	ADD_SUITE(ffmpeg_stream_read_test);
+	ADD_SUITE(ffmpeg_stream_read_and_feed_test);
 	ADD_SUITE(ffmpeg_decoder_test);
-	ADD_SUITE(ffmpeg_decoder_frame_size_test);
+	ADD_SUITE(ffmpeg_decoder_methods_test);
 
 	return run_test();
 }

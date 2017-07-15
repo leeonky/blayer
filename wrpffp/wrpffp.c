@@ -77,8 +77,14 @@ int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_strea
 		if (decoder.codec_context = avcodec_alloc_context3(codec)) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
-				if (process) {
-					res = process(stream, &decoder, arg, io_s);
+				if(decoder.frame = av_frame_alloc()) {
+					if (process) {
+						res = process(stream, &decoder, arg, io_s);
+					}
+					av_frame_free(&decoder.frame);
+				} else {
+					res = -1;
+					fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
 				}
 				avcodec_close(decoder.codec_context);
 			} else {
@@ -108,3 +114,24 @@ int ffmpeg_decoder_frame_size(ffmpeg_decoder *decoder) {
 	return av_image_get_buffer_size(decoder->codec_context->pix_fmt, decoder->codec_context->width, decoder->codec_context->height, 1);
 }
 
+int ffmpeg_stream_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, io_stream *io_s) {
+	int res = 0;
+	if(!(res=ffmpeg_stream_read(stream, io_s)))
+		res = avcodec_send_packet(decoder->codec_context, &stream->packet);
+	else
+		avcodec_send_packet(decoder->codec_context, NULL);
+	return res;
+}
+
+/*int ffmpeg_decoder_decode_to(ffmpeg_decoder *decoder, ffmpeg_stream *stream, void *buffer, io_stream *io_s) {*/
+	/*int res = 0, ret;*/
+	/*AVFrame *frame = decoder->frame;*/
+	/*AVCodecContext *codec_context = decoder->codec_context;*/
+	/*if((ret=av_image_fill_arrays(frame->data, frame->linesize, buffer, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) > 0) {*/
+		/*avcodec_send_packet(codec_context, &stream->packet);*/
+		/*avcodec_receive_frame(codec_context, frame);*/
+	/*} else {*/
+		/*res = print_error(ret, io_s->stderr);*/
+	/*}*/
+	/*return res;*/
+/*}*/

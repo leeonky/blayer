@@ -153,3 +153,67 @@ SUITE_CASE("get a packet from stream") {
 }
 
 SUITE_END(ffmpeg_stream_read_test);
+
+SUITE_START("ffmpeg_stream_read_and_feed_test");
+
+static ffmpeg_decoder decoder;
+static AVCodecContext codec_context;
+static AVFrame frame;
+
+static int stub_av_read_frame_index_0(AVFormatContext *format_context, AVPacket *packet) {
+	packet->stream_index = 0;
+	return 0;
+}
+
+BEFORE_EACH() {
+	ffst.format_context = &format_context;
+	ffst.stream = &streams[0];
+
+	streams[0].index = 0;
+
+	decoder.codec_context = &codec_context;
+	decoder.frame = &frame;
+
+	init_subject("");
+	init_mock_function(av_read_frame, stub_av_read_frame_index_0);
+	init_mock_function(avcodec_send_packet, NULL);
+	return 0;
+}
+
+AFTER_EACH() {
+	close_subject();
+	return 0;
+}
+
+SUBJECT(int) {
+	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
+	return ffmpeg_stream_read_and_feed(&ffst, &decoder, &io_s);
+}
+
+SUITE_CASE("read and send data to decoder") {
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(av_read_frame);
+
+	CUE_EXPECT_CALLED_ONCE(avcodec_send_packet);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 1, &codec_context);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 2, &ffst.packet);
+}
+
+static int stub_av_read_frame_eof(AVFormatContext *format_context, AVPacket *packet) {
+	return -1;
+}
+
+SUITE_CASE("enter last mode when get to the end of file") {
+	init_mock_function(av_read_frame, stub_av_read_frame_eof);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_CALLED_ONCE(av_read_frame);
+
+	CUE_EXPECT_CALLED_ONCE(avcodec_send_packet);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 1, &codec_context);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 2, NULL);
+}
+
+SUITE_END(ffmpeg_stream_read_and_feed_test);
