@@ -8,7 +8,7 @@ static int print_error(int no, FILE *stderr) {
 	return -1;
 }
 
-int ffmpeg_main(const char *file, void *arg, int(*process)(ffmpeg *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_open(const char *file, void *arg, int(*process)(ffmpeg *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg ffp = {};
 
@@ -64,12 +64,12 @@ static int find_stream_process(ffmpeg *ffp, void *arg, io_stream *io_s) {
 	return ffmpeg_find_stream(ffp, stream_arg->type, stream_arg->track, stream_arg->arg, stream_arg->process, io_s);
 }
 
-int ffmpeg_main_stream(const char *file, enum AVMediaType type, int track, void *arg, int(*process)(ffmpeg_stream *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_open_stream(const char *file, enum AVMediaType type, int track, void *arg, int(*process)(ffmpeg_stream *, void *, io_stream *), io_stream *io_s) {
 	find_stream_args stream_arg = {type, track, arg, process};
-	return ffmpeg_main(file, &stream_arg, find_stream_process, io_s);
+	return ffmpeg_open(file, &stream_arg, find_stream_process, io_s);
 }
 
-int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
+int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_decoder decoder;
 	AVCodec *codec;
@@ -102,7 +102,7 @@ int ffmpeg_decoding(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_strea
 	return res;
 }
 
-int ffmpeg_stream_read(ffmpeg_stream *stream, io_stream *io_s) {
+int ffmpeg_read(ffmpeg_stream *stream, io_stream *io_s) {
 	int res = 0;
 	while((!(res = av_read_frame(stream->format_context, &stream->packet)))
 			&& stream->stream->index != stream->packet.stream_index)
@@ -110,21 +110,26 @@ int ffmpeg_stream_read(ffmpeg_stream *stream, io_stream *io_s) {
 	return res;
 }
 
-int ffmpeg_stream_decoded_frame_size(ffmpeg_stream *stream) {
+int ffmpeg_frame_size(ffmpeg_stream *stream) {
 	AVCodecParameters *codecpar = stream->stream->codecpar;
-	return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
+	if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
+		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
+	else {
+		fputs ("not support audio yet\n",stderr);
+		abort();
+	}
 }
 
-int ffmpeg_stream_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, io_stream *io_s) {
+int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, io_stream *io_s) {
 	int res = 0;
-	if(!(res=ffmpeg_stream_read(stream, io_s)))
+	if(!(res=ffmpeg_read(stream, io_s)))
 		res = avcodec_send_packet(decoder->codec_context, &stream->packet);
 	else
 		avcodec_send_packet(decoder->codec_context, NULL);
 	return res;
 }
 
-int ffmpeg_decoder_get_frame(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_decode(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {decoder};
 	AVFrame *frame = decoder->frame;

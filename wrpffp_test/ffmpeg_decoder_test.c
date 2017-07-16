@@ -65,7 +65,7 @@ AFTER_EACH() {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_decoding(&stream, &int_arg, test_main, &io_s);
+	return ffmpeg_open_decoder(&stream, &int_arg, test_main, &io_s);
 }
 
 SUITE_CASE("should open and close stream's decoder; return process value") {
@@ -190,7 +190,7 @@ SUITE_CASE("failed to alloc frame") {
 
 SUITE_END(ffmpeg_decoder_test);
 
-SUITE_START("ffmpeg_decoder_get_frame_test");
+SUITE_START("ffmpeg_decode_test");
 
 static ffmpeg_decoder decoder;
 
@@ -230,7 +230,7 @@ static int process_frame(ffmpeg_frame *f, void *arg, io_stream *io_s) {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_decoder_get_frame(&decoder, frame_buffer, &int_arg, process_frame, &io_s);
+	return ffmpeg_decode(&decoder, frame_buffer, &int_arg, process_frame, &io_s);
 }
 
 SUITE_CASE("decode to frame and invoke process") {
@@ -280,4 +280,4 @@ SUITE_CASE("no frame to receive") {
 	CUE_ASSERT_EQ(int_arg, 0);
 }
 
-SUITE_END(ffmpeg_decoder_get_frame_test)
+SUITE_END(ffmpeg_decode_test)

@@ -4,7 +4,7 @@
 #include "mock_ffmpeg/mock_ffmpeg.h"
 #include "wrpffp/wrpffp.h"
 
-SUITE_START("ffmpeg_main_test");
+SUITE_START("ffmpeg_open_test");
 
 static AVFormatContext format_context;
 static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
@@ -29,7 +29,7 @@ AFTER_EACH() {
 	return 0;
 }
 
-static int(*ffmpeg_main_process)(ffmpeg *, void *, io_stream *);
+static int(*ffmpeg_open_process)(ffmpeg *, void *, io_stream *);
 
 static int test_main(ffmpeg *ffp, void *arg, io_stream *io_s) {
 	CUE_ASSERT_PTR_EQ(arg, &int_arg);
@@ -40,7 +40,7 @@ static int test_main(ffmpeg *ffp, void *arg, io_stream *io_s) {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_main("test.avi", &int_arg, ffmpeg_main_process, &io_s);
+	return ffmpeg_open("test.avi", &int_arg, ffmpeg_open_process, &io_s);
 }
 
 SUITE_CASE("should make sure open and close stream file") {
@@ -62,7 +62,7 @@ static int stub_avformat_open_input_error(AVFormatContext **ps, const char *url,
 }
 
 SUITE_CASE("should output avformat_open_input error message and exit") {
-	ffmpeg_main_process = test_main;
+	ffmpeg_open_process = test_main;
 	init_mock_function(avformat_open_input, stub_avformat_open_input_error);
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
@@ -83,7 +83,7 @@ static int stub_avformat_find_stream_info_error(AVFormatContext **ps, const char
 }
 
 SUITE_CASE("should output avformat_find_stream_info error message and exit") {
-	ffmpeg_main_process = test_main;
+	ffmpeg_open_process = test_main;
 	init_mock_function(avformat_find_stream_info, stub_avformat_find_stream_info_error);
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
@@ -100,7 +100,7 @@ SUITE_CASE("should output avformat_find_stream_info error message and exit") {
 }
 
 SUITE_CASE("call block and return the return of block") {
-	ffmpeg_main_process = test_main;
+	ffmpeg_open_process = test_main;
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-3);
 
@@ -111,5 +111,5 @@ SUITE_CASE("call block and return the return of block") {
 	CUE_ASSERT_EQ(int_arg, 100);
 }
 
-SUITE_END(ffmpeg_main_test);
+SUITE_END(ffmpeg_open_test);
 

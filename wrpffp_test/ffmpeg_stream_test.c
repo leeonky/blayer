@@ -111,7 +111,7 @@ SUITE_CASE("no matched stream") {
 
 SUITE_END(ffmpeg_stream_test);
 
-SUITE_START("ffmpeg_stream_read_test");
+SUITE_START("ffmpeg_read_test");
 
 static ffmpeg_stream ffst = {};
 static int read_times = 0;
@@ -141,7 +141,7 @@ static int stub_av_read_frame_index_in_sequence(AVFormatContext *format_context,
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_stream_read(&ffst, &io_s);
+	return ffmpeg_read(&ffst, &io_s);
 }
 
 SUITE_CASE("get a packet from stream") {
@@ -152,9 +152,9 @@ SUITE_CASE("get a packet from stream") {
 	CUE_ASSERT_EQ(ffst.packet.stream_index, 1);
 }
 
-SUITE_END(ffmpeg_stream_read_test);
+SUITE_END(ffmpeg_read_test);
 
-SUITE_START("ffmpeg_stream_read_and_feed_test");
+SUITE_START("ffmpeg_read_and_feed_test");
 
 static ffmpeg_decoder decoder;
 static AVCodecContext codec_context;
@@ -187,7 +187,7 @@ AFTER_EACH() {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_stream_read_and_feed(&ffst, &decoder, &io_s);
+	return ffmpeg_read_and_feed(&ffst, &decoder, &io_s);
 }
 
 SUITE_CASE("read and send data to decoder") {
@@ -216,9 +216,9 @@ SUITE_CASE("enter last mode when get to the end of file") {
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 2, NULL);
 }
 
-SUITE_END(ffmpeg_stream_read_and_feed_test);
+SUITE_END(ffmpeg_read_and_feed_test);
 
-SUITE_START("ffmpeg_stream_decoded_frame_size_test");
+SUITE_START("ffmpeg_frame_size_test");
 
 BEFORE_EACH() {
 	init_subject("");
@@ -245,7 +245,7 @@ SUITE_CASE("get frame buffer size for video") {
 
 	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
 
-	CUE_ASSERT_EQ(ffmpeg_stream_decoded_frame_size(&ffst), 100);
+	CUE_ASSERT_EQ(ffmpeg_frame_size(&ffst), 100);
 
 	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
@@ -254,4 +254,4 @@ SUITE_CASE("get frame buffer size for video") {
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
 }
 
-SUITE_END(ffmpeg_stream_decoded_frame_size_test);
+SUITE_END(ffmpeg_frame_size_test);

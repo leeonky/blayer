@@ -30,7 +30,7 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 
 
 static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
-	while(ffmpeg_stream_read(stream, io_s)>=0) {
+	while(ffmpeg_read(stream, io_s)>=0) {
 		avcodec_send_packet(decoder->codec_context, &stream->packet);
 		if(!avcodec_receive_frame(decoder->codec_context, decoder->frame)) {
 			int64_t pts = av_frame_get_best_effort_timestamp(decoder->frame)-stream->stream->start_time;
@@ -41,7 +41,7 @@ static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder,
 }
 
 static int process_video_stream(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
-	return ffmpeg_decoding(stream, arg, decoding_video_stream, io_s);
+	return ffmpeg_open_decoder(stream, arg, decoding_video_stream, io_s);
 }
 
 int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
@@ -50,6 +50,6 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 	io_stream io_s = {stdin, stdout, stderr};
 
 	if(!(res = process_args(&args, argc, argv, stderr)))
-		res = ffmpeg_main_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.video_index, NULL, process_video_stream, &io_s);
+		res = ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.video_index, NULL, process_video_stream, &io_s);
 	return res;
 }
