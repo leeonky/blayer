@@ -20,7 +20,7 @@ mock_void_function_1(av_frame_free, AVFrame **);
 mock_void_function_1(avformat_close_input, AVFormatContext **);
 mock_function_1(const char *, av_get_media_type_string, enum AVMediaType);
 mock_function_4(int, av_image_get_buffer_size, enum AVPixelFormat, int, int, int);
-mock_function_7(int, av_image_fill_arrays, uint8_t *, int, const uint8_t *, enum AVPixelFormat, int, int, int);
+mock_function_7(int, av_image_fill_arrays, uint8_t **, int *, const uint8_t *, enum AVPixelFormat, int, int, int);
 
 int av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
 	snprintf(errbuf, errbuf_size, "%d", errnum);

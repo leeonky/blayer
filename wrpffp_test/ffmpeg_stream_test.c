@@ -217,3 +217,41 @@ SUITE_CASE("enter last mode when get to the end of file") {
 }
 
 SUITE_END(ffmpeg_stream_read_and_feed_test);
+
+SUITE_START("ffmpeg_stream_decoded_frame_size_test");
+
+BEFORE_EACH() {
+	init_subject("");
+
+	ffst.stream = &streams[0];
+	streams[0].codecpar = &codec_parameters[0];
+	return 0;
+}
+
+AFTER_EACH() {
+	close_subject();
+	return 0;
+}
+
+static int stub_av_image_get_buffer_size(enum AVPixelFormat format, int width, int height, int align) {
+	return 100;
+}
+
+SUITE_CASE("get frame buffer size for video") {
+	codec_parameters[0].codec_type = AVMEDIA_TYPE_VIDEO;
+	codec_parameters[0].format = AV_PIX_FMT_YUVA420P10BE;
+	codec_parameters[0].width = 1920;
+	codec_parameters[0].height = 1080;
+
+	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
+
+	CUE_ASSERT_EQ(ffmpeg_stream_decoded_frame_size(&ffst), 100);
+
+	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
+}
+
+SUITE_END(ffmpeg_stream_decoded_frame_size_test);

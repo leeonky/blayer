@@ -110,8 +110,9 @@ int ffmpeg_stream_read(ffmpeg_stream *stream, io_stream *io_s) {
 	return res;
 }
 
-int ffmpeg_decoder_frame_size(ffmpeg_decoder *decoder) {
-	return av_image_get_buffer_size(decoder->codec_context->pix_fmt, decoder->codec_context->width, decoder->codec_context->height, 1);
+int ffmpeg_stream_decoded_frame_size(ffmpeg_stream *stream) {
+	AVCodecParameters *codecpar = stream->stream->codecpar;
+	return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
 }
 
 int ffmpeg_stream_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, io_stream *io_s) {
@@ -124,25 +125,16 @@ int ffmpeg_stream_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, 
 }
 
 int ffmpeg_decoder_get_frame(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
-	int res = 0;
+	int res = 0, ret;
 	ffmpeg_frame fffrm = {decoder};
 	AVFrame *frame = decoder->frame;
 	AVCodecContext *codec_context = decoder->codec_context;
-	av_image_fill_arrays(frame->data, frame->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1);
-	avcodec_receive_frame(codec_context, frame);
-	process(&fffrm, arg, io_s);
+	if((ret=av_image_fill_arrays(frame->data, frame->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) >= 0) {
+		if(!(res=avcodec_receive_frame(codec_context, frame))) {
+			process(&fffrm, arg, io_s);
+		}
+	} else {
+		res = print_error(ret, io_s->stderr);
+	}
 	return res;
 }
-
-/*int ffmpeg_decoder_decode_to(ffmpeg_decoder *decoder, ffmpeg_stream *stream, void *buffer, io_stream *io_s) {*/
-	/*int res = 0, ret;*/
-	/*AVFrame *frame = decoder->frame;*/
-	/*AVCodecContext *codec_context = decoder->codec_context;*/
-	/*if((ret=av_image_fill_arrays(frame->data, frame->linesize, buffer, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) > 0) {*/
-		/*avcodec_send_packet(codec_context, &stream->packet);*/
-		/*avcodec_receive_frame(codec_context, frame);*/
-	/*} else {*/
-		/*res = print_error(ret, io_s->stderr);*/
-	/*}*/
-	/*return res;*/
-/*}*/

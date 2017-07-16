@@ -190,46 +190,9 @@ SUITE_CASE("failed to alloc frame") {
 
 SUITE_END(ffmpeg_decoder_test);
 
-SUITE_START("ffmpeg_decoder_frame_size_test");
+SUITE_START("ffmpeg_decoder_get_frame_test");
 
 static ffmpeg_decoder decoder;
-
-static int stub_av_image_get_buffer_size(enum AVPixelFormat format, int width, int height, int align) {
-	return 100;
-}
-
-static AVFrame frame;
-
-BEFORE_EACH() {
-	init_subject("");
-	decoder.codec_context = &codec_context;
-	decoder.frame = &frame;
-	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
-	codec_context.width = 1920;
-	codec_context.height = 1080;
-	return 0;
-}
-
-AFTER_EACH() {
-	close_subject();
-	return 0;
-}
-
-SUITE_CASE("get frame buffer size") {
-	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
-
-	CUE_ASSERT_EQ(ffmpeg_decoder_frame_size(&decoder), 100);
-
-	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
-}
-
-SUITE_END(ffmpeg_decoder_frame_size_test);
-
-SUITE_START("ffmpeg_decoder_get_frame_test");
 
 static char frame_buffer[100];
 
@@ -248,6 +211,15 @@ BEFORE_EACH() {
 
 	init_mock_function(av_image_fill_arrays, NULL);
 	init_mock_function(avcodec_receive_frame, stub_avcodec_receive_frame_got_frame);
+
+	int_arg = 0;
+
+	init_subject("");
+	return 0;
+}
+
+AFTER_EACH() {
+	close_subject();
 	return 0;
 }
 
@@ -278,6 +250,34 @@ SUITE_CASE("decode to frame and invoke process") {
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 2, decoder.frame);
 
 	CUE_ASSERT_EQ(int_arg, 100);
+}
+
+static int stub_av_image_fill_arrays_error(uint8_t *datas[], int lines[], const uint8_t *buf, enum AVPixelFormat fmt, int w, int h, int align) {
+	return -10;
+}
+
+SUITE_CASE("fail to fill buffer") {
+	init_mock_function(av_image_fill_arrays, stub_av_image_fill_arrays_error);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(avcodec_receive_frame);
+
+	CUE_ASSERT_EQ(int_arg, 0);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -10\n");
+}
+
+static int stub_avcodec_receive_frame_error(AVCodecContext *codec_context, AVFrame *frame) {
+	return -100;
+}
+
+SUITE_CASE("no frame to receive") {
+	init_mock_function(avcodec_receive_frame, stub_avcodec_receive_frame_error);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-100);
+
+	CUE_ASSERT_EQ(int_arg, 0);
 }
 
 SUITE_END(ffmpeg_decoder_get_frame_test)
