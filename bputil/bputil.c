@@ -33,7 +33,7 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	int res = 0;
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
-	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size * (cbuf.mask+1), 0666 | IPC_CREAT)) > 0) {
+	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size * (cbuf.mask+1), 0666 | IPC_CREAT)) != -1) {
 		res = map_and_process(&cbuf, arg, process, io_s);
 		shmctl(cbuf.shm_id, IPC_RMID, NULL);
 	} else {

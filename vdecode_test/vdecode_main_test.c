@@ -8,85 +8,85 @@
 SUITE_START("vdecode main process");
 
 
-/*SUBJECT(int) {*/
-	/*return invoke_subject(vdecode_main);*/
-/*}*/
+SUBJECT(int) {
+	return invoke_subject(vdecode_main);
+}
 
-/*static AVFormatContext format_context;*/
-/*static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {*/
-	/**ps = &format_context;*/
-	/*return 0;*/
-/*}*/
+static AVFormatContext format_context;
+static int stub_avformat_open_input(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
+	*ps = &format_context;
+	return 0;
+}
 
-/*static enum AVCodecID codec_id = 100;*/
-/*static AVCodecParameters codec_parameters;*/
-/*static int stub_avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options) {*/
-	/*static AVStream streams[1];*/
-	/*static AVStream* stream_refs[1] = {streams};*/
-	/*ic->nb_streams = 1;*/
-	/*ic->streams = stream_refs;*/
+static enum AVCodecID codec_id = 100;
+static AVCodecParameters codec_parameters;
+static int stub_avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options) {
+	static AVStream streams[1];
+	static AVStream* stream_refs[1] = {streams};
+	ic->nb_streams = 1;
+	ic->streams = stream_refs;
 
-	/*streams[0].codecpar = &codec_parameters;*/
-	/*streams[0].time_base.num = 1;*/
-	/*streams[0].time_base.den = 100;*/
-	/*streams[0].start_time = 1000;*/
+	streams[0].codecpar = &codec_parameters;
+	streams[0].time_base.num = 1;
+	streams[0].time_base.den = 100;
+	streams[0].start_time = 1000;
 
-	/*codec_parameters.codec_type = AVMEDIA_TYPE_VIDEO;*/
-	/*codec_parameters.codec_id = codec_id;*/
-	/*return 0;*/
-/*}*/
+	codec_parameters.codec_type = AVMEDIA_TYPE_VIDEO;
+	codec_parameters.codec_id = codec_id;
+	return 0;
+}
 
-/*static AVCodec codec;*/
-/*static AVCodec *stub_avcodec_find_decoder(enum AVCodecID codecID) {*/
-	/*return &codec;*/
-/*}*/
+static AVCodec codec;
+static AVCodec *stub_avcodec_find_decoder(enum AVCodecID codecID) {
+	return &codec;
+}
 
-/*static AVCodecContext codec_context;*/
-/*static AVCodecContext *stub_avcodec_alloc_context3(const AVCodec *codec) {*/
-	/*return &codec_context;*/
-/*}*/
+static AVCodecContext codec_context;
+static AVCodecContext *stub_avcodec_alloc_context3(const AVCodec *codec) {
+	return &codec_context;
+}
 
-/*static AVFrame frame;*/
-/*static AVFrame *stub_av_frame_alloc() {*/
-	/*return &frame;*/
-/*}*/
+static AVFrame frame;
+static AVFrame *stub_av_frame_alloc() {
+	return &frame;
+}
 
-/*static void stub_av_frame_free(AVFrame **frame_ref) {*/
-	/*CUE_ASSERT_PTR_EQ(*frame_ref, &frame);*/
-/*}*/
-/*static void stub_avformat_close_input(AVFormatContext **format_context_ref) {*/
-	/*CUE_ASSERT_PTR_EQ(*format_context_ref, &format_context);*/
-/*}*/
+static void stub_av_frame_free(AVFrame **frame_ref) {
+	CUE_ASSERT_PTR_EQ(*frame_ref, &frame);
+}
+static void stub_avformat_close_input(AVFormatContext **format_context_ref) {
+	CUE_ASSERT_PTR_EQ(*format_context_ref, &format_context);
+}
 
-/*static int stub_av_read_frame_at_the_end(AVFormatContext *format_context, AVPacket * packet) {*/
-	/*return -1;*/
-/*}*/
+static int stub_av_read_frame_at_the_end(AVFormatContext *format_context, AVPacket * packet) {
+	return -1;
+}
 
-/*static int read_frame_times = 0;*/
+static int read_frame_times = 0;
 
-/*BEFORE_EACH() {*/
-	/*init_subject("", "-v", "0", "test.avi");*/
-	/*init_mock_function(av_register_all, NULL);*/
-	/*init_mock_function(avformat_open_input, stub_avformat_open_input);*/
-	/*init_mock_function(avformat_find_stream_info, stub_avformat_find_stream_info);*/
-	/*init_mock_function(avcodec_find_decoder, stub_avcodec_find_decoder);*/
-	/*init_mock_function(avcodec_alloc_context3, stub_avcodec_alloc_context3);*/
-	/*init_mock_function(avcodec_parameters_to_context, NULL);*/
-	/*init_mock_function(avcodec_open2, NULL);*/
-	/*init_mock_function(av_frame_alloc, stub_av_frame_alloc);*/
-	/*init_mock_function(av_frame_free, NULL);*/
-	/*init_mock_function(av_read_frame, NULL);*/
-	/*init_mock_function(avcodec_close, NULL);*/
-	/*init_mock_function(avcodec_free_context, NULL);*/
-	/*init_mock_function(avformat_close_input, NULL);*/
-	/*read_frame_times = 0;*/
-	/*return 0;*/
-/*}*/
+BEFORE_EACH() {
+	init_subject("", "-v", "0", "test.avi");
+	init_mock_function(av_register_all, NULL);
+	init_mock_function(avformat_open_input, stub_avformat_open_input);
+	init_mock_function(avformat_find_stream_info, stub_avformat_find_stream_info);
+	init_mock_function(avcodec_find_decoder, stub_avcodec_find_decoder);
+	init_mock_function(avcodec_alloc_context3, stub_avcodec_alloc_context3);
+	init_mock_function(avcodec_parameters_to_context, NULL);
+	init_mock_function(avcodec_open2, NULL);
+	init_mock_function(av_frame_alloc, stub_av_frame_alloc);
+	init_mock_function(av_frame_free, NULL);
+	init_mock_function(av_read_frame, NULL);
+	init_mock_function(avcodec_close, NULL);
+	init_mock_function(avcodec_free_context, NULL);
+	init_mock_function(avformat_close_input, NULL);
+	read_frame_times = 0;
+	return 0;
+}
 
-/*AFTER_EACH() {*/
-	/*close_subject();*/
-	/*return 0;*/
-/*}*/
+AFTER_EACH() {
+	close_subject();
+	return 0;
+}
 
 /*SUITE_CASE("should called av* method when open video file and set video track") {*/
 	/*init_mock_function(av_read_frame, stub_av_read_frame_at_the_end);*/
@@ -130,10 +130,10 @@ SUITE_START("vdecode main process");
 	/*CUE_EXPECT_CALLED_ONCE(avformat_close_input);*/
 /*}*/
 
-/*static stub_av_read_frame_return_an_unexpect_packet(AVFormatContext *format_context, AVPacket * packet) {*/
-	/*packet->stream_index = 1;*/
-	/*return -(read_frame_times++);*/
-/*}*/
+static stub_av_read_frame_return_an_unexpect_packet(AVFormatContext *format_context, AVPacket * packet) {
+	packet->stream_index = 1;
+	return -(read_frame_times++);
+}
 
 /*SUITE_CASE("skip unexpected stream packet data") {*/
 	/*init_mock_function(av_read_frame, stub_av_read_frame_return_an_unexpect_packet);*/

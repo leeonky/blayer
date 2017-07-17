@@ -140,8 +140,7 @@ static int stub_av_read_frame_index_in_sequence(AVFormatContext *format_context,
 }
 
 SUBJECT(int) {
-	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_read(&ffst, &io_s);
+	return ffmpeg_read(&ffst);
 }
 
 SUITE_CASE("get a packet from stream") {
@@ -186,8 +185,7 @@ AFTER_EACH() {
 }
 
 SUBJECT(int) {
-	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_read_and_feed(&ffst, &decoder, &io_s);
+	return ffmpeg_read_and_feed(&ffst, &decoder);
 }
 
 SUITE_CASE("read and send data to decoder") {

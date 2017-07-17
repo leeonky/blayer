@@ -73,6 +73,7 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 	int res = 0, ret;
 	ffmpeg_decoder decoder;
 	AVCodec *codec;
+	decoder.stream = stream;
 	if(codec = avcodec_find_decoder(stream->stream->codecpar->codec_id)) {
 		if (decoder.codec_context = avcodec_alloc_context3(codec)) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
@@ -102,7 +103,7 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 	return res;
 }
 
-int ffmpeg_read(ffmpeg_stream *stream, io_stream *io_s) {
+int ffmpeg_read(ffmpeg_stream *stream) {
 	int res = 0;
 	while((!(res = av_read_frame(stream->format_context, &stream->packet)))
 			&& stream->stream->index != stream->packet.stream_index)
@@ -120,9 +121,9 @@ int ffmpeg_frame_size(ffmpeg_stream *stream) {
 	}
 }
 
-int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder, io_stream *io_s) {
+int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	int res = 0;
-	if(!(res=ffmpeg_read(stream, io_s)))
+	if((res=ffmpeg_read(stream)) >= 0)
 		res = avcodec_send_packet(decoder->codec_context, &stream->packet);
 	else
 		avcodec_send_packet(decoder->codec_context, NULL);
@@ -143,3 +144,25 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(
 	}
 	return res;
 }
+
+int ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
+	AVStream *stream = frame->decoder->stream->stream;
+	AVCodecContext *codec_context = frame->decoder->codec_context;
+	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
+	if(AV_NOPTS_VALUE == pts) {
+		return frame->decoder->_pts += frame->decoder->_duration;
+	} else {
+		if(frame->decoder->frame->pkt_duration) {
+			frame->decoder->_duration = av_rescale_q(frame->decoder->frame->pkt_duration, stream->time_base, AV_TIME_BASE_Q);
+		} else if(codec_context->framerate.num != 0 && codec_context->framerate.den != 0) {
+			int ticks = stream->parser ? stream->parser->repeat_pict+1 : codec_context->ticks_per_frame;
+			frame->decoder->_duration = ((int64_t)AV_TIME_BASE *
+					codec_context->framerate.den * ticks) /
+				codec_context->framerate.num / codec_context->ticks_per_frame;
+		} else {
+			frame->decoder->_duration = 3000;
+		}
+		return frame->decoder->_pts = av_rescale_q(pts-stream->start_time, stream->time_base, AV_TIME_BASE_Q);
+	}
+}
+
