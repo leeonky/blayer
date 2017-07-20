@@ -36,6 +36,7 @@ AM_COND_IF([ENV_TEST], [],
 	   snubber/Makefile
 	   wrpffp/Makefile
 	   vdecode/Makefile
+	   wrpsdl/Makefile
 	   ])])
 
 # Testing Makefile
@@ -43,11 +44,13 @@ AM_COND_IF([ENV_PRD], [],
 	  [AC_CONFIG_FILES([
 	   mock_ffmpeg/Makefile
 	   mock_sys/Makefile
+	   mock_sdl/Makefile
 	   pinf_test/Makefile
 	   snubber_test/Makefile
 	   wrpffp_test/Makefile
 	   vdecode_test/Makefile
 	   bputil_test/Makefile
+	   wrpsdl_test/Makefile
 	   ])])
 
 AC_OUTPUT

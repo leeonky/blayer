@@ -50,13 +50,6 @@ static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder,
 		ffmpeg_decode(decoder, shrb_get(cbuf), arg, process_decoded_frame, io_s);
 	}
 	while(!ffmpeg_decode(decoder, shrb_get(cbuf), arg, process_decoded_frame, io_s));
-	/*while(ffmpeg_read(stream, io_s)>=0) {*/
-		/*avcodec_send_packet(decoder->codec_context, &stream->packet);*/
-		/*if(!avcodec_receive_frame(decoder->codec_context, decoder->frame)) {*/
-			/*int64_t pts = av_frame_get_best_effort_timestamp(decoder->frame)-stream->stream->start_time;*/
-			/*fprintf(io_s->stdout, "video_frame:: width:%d height:%d format:%d pts:%lld\n" , decoder->frame->width, decoder->frame->height, decoder->frame->format, pts*stream->stream->time_base.num*1000/stream->stream->time_base.den);*/
-		/*}*/
-	/*}*/
 	return 0;
 }
 
