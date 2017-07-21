@@ -122,7 +122,7 @@ int ffmpeg_frame_size(ffmpeg_stream *stream) {
 	if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
 		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
 	else {
-		fputs ("not support audio yet\n",stderr);
+		fputs ("ffmpeg_frame_size not support audio yet\n",stderr);
 		abort();
 	}
 }
@@ -171,12 +171,16 @@ const char *ffmpeg_video_frame_info(ffmpeg_frame *frame) {
 	static __thread char buffer[1024];
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	AVFrame *avframe = frame->decoder->frame;
-	sprintf(buffer, "width:%d height:%d format:%d pts:%lld y:%d u:%d v:%d",
+	sprintf(buffer, "width:%d height:%d format:%d l1:%d l2:%d l3:%d l4:%d pts:%lld",
 			codec_context->width,
 			codec_context->height,
 			codec_context->pix_fmt,
-			ffmpeg_frame_present_timestamp(frame),
-			avframe->linesize[0], avframe->linesize[1], avframe->linesize[2]);
+			avframe->linesize[0],
+			avframe->linesize[1],
+			avframe->linesize[2],
+			avframe->linesize[3],
+			(int64_t)ffmpeg_frame_present_timestamp(frame));
+
 	return buffer;
 }
 
@@ -188,7 +192,7 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io
 		if((ret=av_image_copy_to_buffer(buf, size, avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
 			res = print_error(ret, io_s->stderr);
 	} else {
-		fputs ("not support audio yet\n", stderr);
+		fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);
 		abort();
 	}
 	return res;
