@@ -171,14 +171,10 @@ const char *ffmpeg_video_frame_info(ffmpeg_frame *frame) {
 	static __thread char buffer[1024];
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	AVFrame *avframe = frame->decoder->frame;
-	sprintf(buffer, "width:%d height:%d format:%d l1:%d l2:%d l3:%d l4:%d pts:%lld",
+	sprintf(buffer, "width:%d height:%d format:%d pts:%lld",
 			codec_context->width,
 			codec_context->height,
 			codec_context->pix_fmt,
-			avframe->linesize[0],
-			avframe->linesize[1],
-			avframe->linesize[2],
-			avframe->linesize[3],
 			(int64_t)ffmpeg_frame_present_timestamp(frame));
 
 	return buffer;

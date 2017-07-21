@@ -1,7 +1,7 @@
 SUBDIRS = 
 
 if !ENV_TEST
-SUBDIRS += bputil pinf snubber wrpffp wrpsdl vdecode
+SUBDIRS += bputil pinf snubber wrpffp wrpsdl vdecode vplayer
 endif
 
 if !ENV_PRD

@@ -37,6 +37,7 @@ AM_COND_IF([ENV_TEST], [],
 	   wrpffp/Makefile
 	   vdecode/Makefile
 	   wrpsdl/Makefile
+	   vplayer/Makefile
 	   ])])
 
 # Testing Makefile
