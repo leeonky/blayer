@@ -45,7 +45,7 @@ extern int ffmpeg_decode(ffmpeg_decoder *, void *, int (*)(ffmpeg_frame *, void 
 
 extern const char *ffmpeg_video_frame_info(ffmpeg_frame *frame);
 
-extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, io_stream *);
+extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, size_t, int, io_stream *);
 
 #endif
 

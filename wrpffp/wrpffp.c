@@ -180,20 +180,13 @@ const char *ffmpeg_video_frame_info(ffmpeg_frame *frame) {
 	return buffer;
 }
 
-int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, io_stream *io_s) {
+int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io_stream *io_s) {
 	int res = 0, ret;
-	AVFrame *avframe = frame->decoder->tmp_frame;
-	AVFrame *srcframe = frame->decoder->frame;
+	AVFrame *avframe = frame->decoder->frame;
 	AVCodecContext *codec_context = frame->decoder->codec_context;
-
 	if (AVMEDIA_TYPE_VIDEO == codec_context->codec_type) {
-		avframe->format = srcframe->format;
-		avframe->width = srcframe->width;
-		avframe->height = srcframe->height;
-
-		if((ret=av_image_fill_arrays(avframe->data, avframe->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) < 0 || (ret=av_frame_copy(avframe, frame->decoder->frame)) < 0 ) {
+		if((ret=av_image_copy_to_buffer(buf, size, avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
 			res = print_error(ret, io_s->stderr);
-		}
 	} else {
 		fputs ("not support audio yet\n", stderr);
 		abort();
