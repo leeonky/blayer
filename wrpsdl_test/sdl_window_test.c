@@ -25,12 +25,20 @@ BEFORE_EACH() {
 	window = (SDL_Window *)&window;
 	renderer = (SDL_Renderer *)&renderer;
 
+	init_subject("");
+
 	init_mock_function(SDL_InitSubSystem, NULL);
 	init_mock_function(SDL_CreateWindow, stub_SDL_CreateWindow);
 	init_mock_function(SDL_CreateRenderer, stub_SDL_CreateRenderer);
 	init_mock_function(SDL_DestroyRenderer, NULL);
 	init_mock_function(SDL_DestroyWindow, NULL);
 	init_mock_function(SDL_QuitSubSystem, NULL);
+	init_mock_function(SDL_ShowCursor, NULL);
+	return 0;
+}
+
+AFTER_EACH() {
+	close_subject();
 	return 0;
 }
 
@@ -58,6 +66,9 @@ SUITE_CASE("open window with args and get window and renderer") {
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateWindow, 5, 400);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateWindow, 6, SDL_WINDOW_RESIZABLE);
 
+	CUE_EXPECT_CALLED_ONCE(SDL_ShowCursor);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_ShowCursor, 1, SDL_DISABLE);
+
 	CUE_EXPECT_CALLED_ONCE(SDL_CreateRenderer);
 	CUE_EXPECT_CALLED_WITH_PTR(SDL_CreateRenderer, 1, window);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 2, -1);
@@ -73,6 +84,59 @@ SUITE_CASE("open window with args and get window and renderer") {
 
 	CUE_EXPECT_CALLED_ONCE(SDL_QuitSubSystem);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_QuitSubSystem, 1, SDL_INIT_VIDEO);
+}
+
+static int stub_SDL_InitSubSystem_error(Uint32 f) {
+	return -1;
+}
+
+SUITE_CASE("failed to init video") {
+	init_mock_function(SDL_InitSubSystem, stub_SDL_InitSubSystem_error);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpsdl]: sdl error\n");
+
+	CUE_EXPECT_NEVER_CALLED(SDL_CreateWindow);
+	CUE_EXPECT_NEVER_CALLED(SDL_CreateRenderer);
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyWindow);
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyRenderer);
+	CUE_EXPECT_NEVER_CALLED(SDL_QuitSubSystem);
+}
+
+static SDL_Window *stub_SDL_CreateWindow_error(const char *title, int x, int y, int w, int h, Uint32 flag) {
+	return NULL;
+}
+
+SUITE_CASE("failed to create window") {
+	init_mock_function(SDL_CreateWindow, stub_SDL_CreateWindow_error);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpsdl]: sdl error\n");
+
+	CUE_EXPECT_NEVER_CALLED(SDL_CreateRenderer);
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyWindow);
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyRenderer);
+
+	CUE_EXPECT_CALLED_ONCE(SDL_QuitSubSystem);
+}
+
+static SDL_Renderer *stub_SDL_CreateRenderer_error(SDL_Window *w, int index, Uint32 flag) {
+	return NULL;
+}
+
+SUITE_CASE("failed to create window") {
+	init_mock_function(SDL_CreateRenderer, stub_SDL_CreateRenderer_error);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpsdl]: sdl error\n");
+
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyWindow);
+
+	CUE_EXPECT_CALLED_ONCE(SDL_DestroyRenderer);
+	CUE_EXPECT_CALLED_ONCE(SDL_QuitSubSystem);
 }
 
 SUITE_END(sdl_open_window_test);
