@@ -58,3 +58,9 @@ int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbu
 	cbuf.shm_id = id;
 	return map_and_process(&cbuf, arg, process, io_s);
 }
+
+const char *shrb_info(shm_cbuf *cbuf) {
+	static __thread char buffer[1024];
+	sprintf(buffer, "cbuf:%d index:%d", cbuf->shm_id, cbuf->index);
+	return buffer;
+}

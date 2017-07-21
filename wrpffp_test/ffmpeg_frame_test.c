@@ -19,6 +19,7 @@ BEFORE_EACH() {
 	decoder.frame = &avframe;
 	decoder.tmp_frame = &tmp_avframe;
 
+	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
 	codec_context.width = 1080;
 	codec_context.height = 640;
 	codec_context.pix_fmt = AV_PIX_FMT_NV12;
