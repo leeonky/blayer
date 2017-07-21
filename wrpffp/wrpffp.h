@@ -17,6 +17,7 @@ typedef struct ffmpeg_stream {
 typedef struct ffmpeg_decoder {
 	AVCodecContext *codec_context;
 	AVFrame *frame;
+	AVFrame *tmp_frame;
 	ffmpeg_stream *stream;
 	int64_t _pts;
 	int64_t _duration;
@@ -40,15 +41,11 @@ extern int ffmpeg_frame_size(ffmpeg_stream *);
 
 extern int ffmpeg_read_and_feed(ffmpeg_stream *, ffmpeg_decoder *);
 
-extern int ffmpeg_decode(ffmpeg_decoder *, void *, void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
+extern int ffmpeg_decode(ffmpeg_decoder *, void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
 
-#define ffmpeg_image_width(frame) (frame)->decoder->codec_context->width
+extern const char *ffmpeg_video_frame_info(ffmpeg_frame *frame);
 
-#define ffmpeg_image_height(frame) (frame)->decoder->codec_context->height
-
-#define ffmpeg_image_pixel_format(frame) (frame)->decoder->codec_context->pix_fmt
-
-extern int ffmpeg_frame_present_timestamp(ffmpeg_frame *);
+extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, io_stream *);
 
 #endif
 

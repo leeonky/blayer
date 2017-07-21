@@ -37,19 +37,15 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 
 static int process_decoded_frame(ffmpeg_frame *frame, void *arg, io_stream *io_s) {
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
-	fprintf(io_s->stdout, "video_frame:: width:%d height:%d format:%d pts:%lld\n",
-			ffmpeg_image_width(frame),
-			ffmpeg_image_height(frame),
-			ffmpeg_image_pixel_format(frame),
-			ffmpeg_frame_present_timestamp(frame));
+	fprintf(io_s->stdout, "video_frame:: %s cbuf:%d index:%d\n", ffmpeg_video_frame_info(frame));
 }
 
 static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
 	while(!ffmpeg_read_and_feed(stream, decoder)) {
-		ffmpeg_decode(decoder, shrb_get(cbuf), arg, process_decoded_frame, io_s);
+		ffmpeg_decode(decoder, arg, process_decoded_frame, io_s);
 	}
-	while(!ffmpeg_decode(decoder, shrb_get(cbuf), arg, process_decoded_frame, io_s));
+	while(!ffmpeg_decode(decoder, arg, process_decoded_frame, io_s));
 	return 0;
 }
 

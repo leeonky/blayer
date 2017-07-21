@@ -106,7 +106,7 @@ SUITE_CASE("no matched stream") {
 	track = 2;
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
-	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: video stream 2 doesn't exist");
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: video stream 2 doesn't exist\n");
 }
 
 SUITE_END(ffmpeg_stream_test);

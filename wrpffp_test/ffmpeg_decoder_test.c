@@ -85,14 +85,14 @@ SUITE_CASE("should open and close stream's decoder; return process value") {
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_open2, 1, &codec_context);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_open2, 2, &codec);
 
-	CUE_EXPECT_CALLED_ONCE(av_frame_alloc);
+	CUE_EXPECT_CALLED_TIMES(av_frame_alloc, 2);
+
+	CUE_EXPECT_CALLED_TIMES(av_frame_free, 2);
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_close);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_close, 1, &codec_context);
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_free_context);
-
-	CUE_EXPECT_CALLED_ONCE(av_frame_free);
 
 	CUE_ASSERT_EQ(int_arg, 100);
 }
@@ -194,8 +194,6 @@ SUITE_START("ffmpeg_decode_test");
 
 static ffmpeg_decoder decoder;
 
-static char frame_buffer[100];
-
 static int stub_avcodec_receive_frame_got_frame(AVCodecContext *codec_context, AVFrame *frame) {
 	return 0;
 }
@@ -209,7 +207,6 @@ BEFORE_EACH() {
 	codec_context.height = 1080;
 	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
 
-	init_mock_function(av_image_fill_arrays, NULL);
 	init_mock_function(avcodec_receive_frame, stub_avcodec_receive_frame_got_frame);
 
 	int_arg = 0;
@@ -230,42 +227,17 @@ static int process_frame(ffmpeg_frame *f, void *arg, io_stream *io_s) {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_decode(&decoder, frame_buffer, &int_arg, process_frame, &io_s);
+	return ffmpeg_decode(&decoder, &int_arg, process_frame, &io_s);
 }
 
 SUITE_CASE("decode to frame and invoke process") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
-
-	CUE_EXPECT_CALLED_ONCE(av_image_fill_arrays);
-	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 1, frame.data);
-	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 2, frame.linesize);
-	CUE_EXPECT_CALLED_WITH_PTR(av_image_fill_arrays, 3, frame_buffer);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 4, codec_context.pix_fmt);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 5, codec_context.width);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 6, codec_context.height);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 7, 1);
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_receive_frame);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 1, decoder.codec_context);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 2, decoder.frame);
 
 	CUE_ASSERT_EQ(int_arg, 100);
-}
-
-static int stub_av_image_fill_arrays_error(uint8_t *datas[], int lines[], const uint8_t *buf, enum AVPixelFormat fmt, int w, int h, int align) {
-	return -10;
-}
-
-SUITE_CASE("fail to fill buffer") {
-	init_mock_function(av_image_fill_arrays, stub_av_image_fill_arrays_error);
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_EXPECT_NEVER_CALLED(avcodec_receive_frame);
-
-	CUE_ASSERT_EQ(int_arg, 0);
-
-	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -10\n");
 }
 
 static int stub_avcodec_receive_frame_error(AVCodecContext *codec_context, AVFrame *frame) {

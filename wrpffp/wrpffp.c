@@ -41,7 +41,7 @@ int ffmpeg_find_stream(ffmpeg *ffp, enum AVMediaType type, int track, void *arg,
 	ffmpeg_stream stream = {};
 	stream.format_context = ffp->format_context;
 	if (!(stream.stream = find_stream(ffp->format_context, type, (track<0 ? 0 : track)))) {
-		fprintf(io_s->stderr, "Error[libwrpffp]: %s stream %d doesn't exist", av_get_media_type_string(type), track);
+		fprintf(io_s->stderr, "Error[libwrpffp]: %s stream %d doesn't exist\n", av_get_media_type_string(type), track);
 		return -1;
 	}
 	av_init_packet(&stream.packet);
@@ -79,8 +79,14 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
 				if(decoder.frame = av_frame_alloc()) {
-					if (process) {
-						res = process(stream, &decoder, arg, io_s);
+					if(decoder.tmp_frame = av_frame_alloc()) {
+						if (process) {
+							res = process(stream, &decoder, arg, io_s);
+						}
+						av_frame_free(&decoder.tmp_frame);
+					} else {
+						res = -1;
+						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
 					}
 					av_frame_free(&decoder.frame);
 				} else {
@@ -130,22 +136,17 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
-int ffmpeg_decode(ffmpeg_decoder *decoder, void *buf, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {decoder};
-	AVFrame *frame = decoder->frame;
 	AVCodecContext *codec_context = decoder->codec_context;
-	if((ret=av_image_fill_arrays(frame->data, frame->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) >= 0) {
-		if(!(res=avcodec_receive_frame(codec_context, frame))) {
-			process(&fffrm, arg, io_s);
-		}
-	} else {
-		res = print_error(ret, io_s->stderr);
+	if(!(res=avcodec_receive_frame(codec_context, decoder->frame))) {
+		process(&fffrm, arg, io_s);
 	}
 	return res;
 }
 
-int ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
+static int ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 	AVStream *stream = frame->decoder->stream->stream;
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
@@ -166,3 +167,27 @@ int ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 	}
 }
 
+const char *ffmpeg_video_frame_info(ffmpeg_frame *frame) {
+	static __thread char buffer[1024];
+	AVCodecContext *codec_context = frame->decoder->codec_context;
+	AVFrame *avframe = frame->decoder->frame;
+	sprintf(buffer, "width:%d height:%d format:%d pts:%lld y:%d u:%d v:%d yl:%d ul:%d yl:%d",
+			codec_context->width,
+			codec_context->height,
+			codec_context->pix_fmt,
+			ffmpeg_frame_present_timestamp(frame),
+			0, avframe->data[1]-avframe->data[0], avframe->data[2]-avframe->data[0],
+			avframe->linesize[0], avframe->linesize[1], avframe->linesize[2]);
+	return buffer;
+}
+
+int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, io_stream *io_s) {
+	int res = 0, ret;
+	AVFrame *avframe = frame->decoder->tmp_frame;
+	AVCodecContext *codec_context = frame->decoder->codec_context;
+	if((ret=av_image_fill_arrays(avframe->data, avframe->linesize, buf, codec_context->pix_fmt, codec_context->width, codec_context->height, 1)) < 0 ||
+		(ret=av_frame_copy(avframe, frame->decoder->frame)) < 0 ) {
+		res = print_error(ret, io_s->stderr);
+	}
+	return res;
+}
