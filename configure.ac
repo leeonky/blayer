@@ -38,6 +38,7 @@ AM_COND_IF([ENV_TEST], [],
 	   vdecode/Makefile
 	   wrpsdl/Makefile
 	   vplayer/Makefile
+	   vbuf/Makefile
 	   ])])
 
 # Testing Makefile
@@ -52,6 +53,7 @@ AM_COND_IF([ENV_PRD], [],
 	   vdecode_test/Makefile
 	   bputil_test/Makefile
 	   wrpsdl_test/Makefile
+	   vbuf_test/Makefile
 	   ])])
 
 AC_OUTPUT

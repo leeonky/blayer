@@ -17,14 +17,19 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	int option_index = 0, c;
 	struct option long_options[] = {
 		{"video_index", required_argument, 0, 'v'},
+		{"buffer_bits", required_argument, 0, 'b'},
 		{0, 0, 0, 0}
 	};
 	optind = 1;
-	while((c = getopt_long(argc, argv, "v:", long_options, &option_index)) != -1) {
-		switch(c)
-		case 'v':
-			sscanf(optarg, "%d", &args->video_index);
-			break;
+	while((c = getopt_long(argc, argv, "v:b:", long_options, &option_index)) != -1) {
+		switch(c) {
+			case 'v':
+				sscanf(optarg, "%d", &args->video_index);
+				break;
+			case 'b':
+				sscanf(optarg, "%d", &args->buffer_bits);
+				break;
+		}
 	}
 	if(optind < argc)
 		args->file_name = argv[optind];
@@ -37,8 +42,10 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 
 static int process_decoded_frame(ffmpeg_frame *frame, void *arg, io_stream *io_s) {
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
-	if(!ffmpeg_frame_copy(frame, shrb_allocate(cbuf), cbuf->element_size, 1, io_s))
+	if(!ffmpeg_frame_copy(frame, shrb_allocate(cbuf), cbuf->element_size, 1, io_s)) {
 		fprintf(io_s->stdout, "video_frame:: %s align:%d %s\n", ffmpeg_video_frame_info(frame), 1, shrb_info(cbuf));
+		fflush(io_s->stdout);
+	}
 }
 
 static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
@@ -58,7 +65,7 @@ static int alloc_cbuf(shm_cbuf *cbuf, void *arg, io_stream *io_s) {
 
 static int process_video_stream(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	((app_context *)arg)->stream = stream;
-	return shrb_new(4, ffmpeg_frame_size(stream), arg, alloc_cbuf, io_s);
+	return shrb_new(((app_context *)arg)->args->buffer_bits, ffmpeg_frame_size(stream), arg, alloc_cbuf, io_s);
 }
 
 int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {

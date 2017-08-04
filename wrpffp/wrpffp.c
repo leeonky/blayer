@@ -5,6 +5,7 @@ static int print_error(int no, FILE *stderr) {
 	char buffer[1024];
 	av_strerror(no, buffer, sizeof(buffer));
 	fprintf(stderr, "Error[libwrpffp]: %s\n", buffer);
+	print_stack(stderr);
 	return -1;
 }
 

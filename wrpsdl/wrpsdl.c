@@ -2,6 +2,7 @@
 
 static int print_error(FILE *stderr) {
 	fprintf(stderr, "Error[libwrpsdl]: %s\n", SDL_GetError());
+	print_stack(stderr);
 	return -1;
 }
 
