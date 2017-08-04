@@ -40,7 +40,7 @@ SUITE_CASE("can set opt of video track") {
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
-SUITE_CASE("can set long opt") {
+SUITE_CASE("can set long opt of video track") {
 	init_subject("", "--video_index", "2", "test.avi");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -54,6 +54,20 @@ SUITE_CASE("can add '=' between long opt and value") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.video_index, 2);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
+}
+
+SUITE_CASE("default of cbuf bits") {
+	init_subject("", "test.avi");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+	CUE_ASSERT_EQ(args.buffer_bits, 4);
+}
+
+SUITE_CASE("can set cbuf bits") {
+	init_subject("", "-b 3", "test.avi");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+	CUE_ASSERT_EQ(args.buffer_bits, 3);
 }
 
 SUITE_END(test_vdecode_args);
