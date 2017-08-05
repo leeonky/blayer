@@ -137,17 +137,17 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
-int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*process)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {decoder};
 	AVCodecContext *codec_context = decoder->codec_context;
 	if(!(res=avcodec_receive_frame(codec_context, decoder->frame))) {
-		process(&fffrm, arg, io_s);
+		process(decoder, &fffrm, arg, io_s);
 	}
 	return res;
 }
 
-static int ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
+static int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 	AVStream *stream = frame->decoder->stream->stream;
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
@@ -176,9 +176,12 @@ const char *ffmpeg_video_frame_info(ffmpeg_frame *frame) {
 			codec_context->width,
 			codec_context->height,
 			codec_context->pix_fmt,
-			(int64_t)ffmpeg_frame_present_timestamp(frame));
+			ffmpeg_frame_present_timestamp(frame));
 
 	return buffer;
+}
+
+extern const char *ffmpeg_video_info(ffmpeg_decoder *decode) {
 }
 
 int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io_stream *io_s) {

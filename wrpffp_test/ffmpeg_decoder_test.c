@@ -220,7 +220,7 @@ AFTER_EACH() {
 	return 0;
 }
 
-static int process_frame(ffmpeg_frame *f, void *arg, io_stream *io_s) {
+static int process_frame(ffmpeg_decoder *d, ffmpeg_frame *f, void *arg, io_stream *io_s) {
 	*(int *)arg = 100;
 	return 0;
 }
