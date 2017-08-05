@@ -39,11 +39,12 @@ static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
 
 	while ((read = getline(&line, &len, input_file))!=-1 && strcmp(line, "EXIT\n")!=0) {
 	/*while ((read = getline(&line, &len, stdin))!=-1 && strcmp(line, "EXIT\n")!=0) {*/
-		sscanf(line, "video_frame:: width:%d height:%d format:%d pts:%lld align:%d cbuf:%d index:%d size:%d\n", &w, &h, &fmt, &pts, &align, &cid, &cindex, &size);
+		sscanf(line, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld\n", &w, &h, &fmt, &align, &cid, &size, &cindex, &pts);
 		shrb_load(cid, 4, size, NULL, process_frame, io_s);
 	}
 
 	fclose(input_file);
+	return 0;
 }
 
 int vplayer_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
