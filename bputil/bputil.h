@@ -24,6 +24,8 @@ typedef struct shm_cbuf {
 
 void *shrb_get(shm_cbuf *, int index);
 
+#define shrb_index(cbuf) ((cbuf)->index)
+
 void *shrb_allocate(shm_cbuf *);
 
 int shrb_new(size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);

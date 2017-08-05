@@ -40,10 +40,10 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	return 0;
 }
 
-static int process_decoded_frame(ffmpeg_decoder *decode, ffmpeg_frame *frame, void *arg, io_stream *io_s) {
+static int process_decoded_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, void *arg, io_stream *io_s) {
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
 	if(!ffmpeg_frame_copy(frame, shrb_allocate(cbuf), cbuf->element_size, 1, io_s)) {
-		fprintf(io_s->stdout, "video_frame:: %s align:%d %s\n", ffmpeg_video_frame_info(frame), 1, shrb_info(cbuf));
+		fprintf(io_s->stdout, "video_frames:: %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));
 	}
 }
 
