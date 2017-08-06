@@ -1,6 +1,5 @@
 lib_LTLIBRARIES = libwrpffp.la
 libwrpffp_la_SOURCES = wrpffp.c
 include_HEADERS = wrpffp.h
-libwrpffp_LDADD = -lpinf -lavformat -lavcodec -lavutil -lbputil
-libwrpffp_LDFLAGS = -L../pinf -L../bputil
-libwrpffp_la_LDFLAGS = -shared -fPIC
+libwrpffp_la_LIBADD = -liob -lavformat -lavcodec -lavutil -lbputil
+libwrpffp_la_LDFLAGS = -shared -fPIC -L../iob -L../bputil

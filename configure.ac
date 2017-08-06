@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([blayer], [1.0.0], [leeonky@gmail.com])
-AC_CONFIG_SRCDIR([snubber])
+AC_CONFIG_SRCDIR([vdecode])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign])
 
@@ -32,8 +32,7 @@ AC_CONFIG_FILES([Makefile])
 AM_COND_IF([ENV_TEST], [],
 	  [AC_CONFIG_FILES([
 	   bputil/Makefile
-	   pinf/Makefile
-	   snubber/Makefile
+	   iob/Makefile
 	   wrpffp/Makefile
 	   vdecode/Makefile
 	   wrpsdl/Makefile
@@ -47,8 +46,7 @@ AM_COND_IF([ENV_PRD], [],
 	   mock_ffmpeg/Makefile
 	   mock_sys/Makefile
 	   mock_sdl/Makefile
-	   pinf_test/Makefile
-	   snubber_test/Makefile
+	   iob_test/Makefile
 	   wrpffp_test/Makefile
 	   vdecode_test/Makefile
 	   bputil_test/Makefile
