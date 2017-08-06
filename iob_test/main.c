@@ -30,7 +30,6 @@ SUITE_CASE("should pass through line and exit when got EXIT") {
 
 mock_void_function_5(event_handler, io_bus *, const char *, const char *, void *, io_stream *);
 
-
 static int setup_event(io_bus *iob, void *arg, io_stream *io_s) {
 	iob_handler handler = {
 		.command = "CMD",
@@ -56,10 +55,56 @@ SUITE_CASE("invoke handler with args") {
 	CUE_EXPECT_CALLED_WITH_PTR(event_handler, 4, "ARG");
 }
 
-SUITE_END(iob_test);
+static int setup_event_error(io_bus *iob, void *arg, io_stream *io_s) {
+	return -10;
+}
 
-//failed event failed
-//to many event
+SUITE_CASE("setup event failed") {
+	processor = setup_event_error;
+	init_subject("Hello world\n");
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-10);
+
+	CUE_ASSERT_STDOUT_EQ("");
+}
+
+SUITE_CASE("too many event") {
+	io_bus iob = {};
+	iob_handler handler = {};
+	int count = sizeof(iob.handlers)/sizeof(iob_handler);
+
+	while(count--)
+		iob_add_handler(&iob, &handler);
+
+	CUE_ASSERT_EQ(-1, iob_add_handler(&iob, &handler));
+}
+
+mock_void_function_3(close_handler, io_bus *, void *, io_stream *);
+
+static int setup_event_close(io_bus *iob, void *arg, io_stream *io_s) {
+	iob_handler handler = {
+		.command = "CMD",
+		.arg = "ARG",
+		.close = close_handler,
+	};
+	iob_add_handler(iob, &handler);
+	bus = iob;
+	return 0;
+}
+
+SUITE_CASE("invoke close method when bus close") {
+	processor = setup_event_close;
+	init_subject("");
+	init_mock_function(close_handler, NULL);
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(close_handler);
+	CUE_EXPECT_CALLED_WITH_PTR(close_handler, 1, bus);
+	CUE_EXPECT_CALLED_WITH_STRING(close_handler, 2, "ARG");
+}
+
+SUITE_END(iob_test);
 
 int main() {
 	init_test();

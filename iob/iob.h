@@ -8,6 +8,7 @@ typedef struct iob_handler {
 	const char *command;
 	void * arg;
 	void (*action)(io_bus *, const char *, const char *, void *, io_stream *);
+	void (*close)(io_bus *, void *, io_stream *);
 } iob_handler;
 
 #define MAX_HANDLER 128
