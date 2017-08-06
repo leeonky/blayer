@@ -31,27 +31,62 @@ int process_args(vbuf_args *args, int argc, char **argv, FILE *stderr) {
 static int frame_width, frame_height, pixel_format, frame_align, cbuf_id, cbuf_index, cbuf_element_size;
 static int64_t pts;
 
-/*static int get_frame_info(*/
+#define MAX_VIDEO_FRAMES_SIZE	256
 
-int vbuf_main(int size, io_stream *io_s) {
+typedef struct video_frames {
+	int width, height, format, align, cbuf_id, element_size;
+	size_t count;
+	struct frame {
+		int index;
+		int64_t pts;
+	} frames[MAX_VIDEO_FRAMES_SIZE];
+} video_frames;
+
+static int get_frame_info(char **line, size_t *len, io_stream *io_s, void *arg, void(*process)(video_frames *, void *)) {
+	ssize_t read;
+	video_frames frames;
+	read = getline(line, len, io_s->stdin);
+
+	sscanf(*line, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld\n", &frames.width, &frames.height, &frames.format, &frames.align, &frames.cbuf_id, &frames.element_size, &frames.frames[0].index, &frames.frames[0].pts);
+
+	if(process) {
+		process(&frames, arg);
+	}
+}
+
+static int read_frames(io_stream *io_s, void *arg, void(*process)(video_frames *, void *, io_stream *)) {
 	char *line = NULL;
 	size_t len = 0;
 	ssize_t read;
-	int i;
-
-	for(i=0; i<size; i++) {
+	video_frames frames;
+	if(getline(&line, &len, io_s->stdin) != -1) {
+		if(8 == sscanf(line, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld\n", &frames.width, &frames.height, &frames.format, &frames.align, &frames.cbuf_id, &frames.element_size, &frames.frames[0].index, &frames.frames[0].pts)) {
+			if(process) {
+				process(&frames, arg, io_s);
+			}
+			return 0;
+		}
 	}
+	return -1;
+}
 
-	read = getline(&line, &len, io_s->stdin);
-	sscanf(line, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld\n", &frame_width, &frame_height, &pixel_format, &frame_align, &cbuf_id, &cbuf_element_size, &cbuf_index, &pts);
-	fprintf(io_s->stdout, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld", frame_width, frame_height, pixel_format, frame_align, cbuf_id, cbuf_element_size, cbuf_index, pts);
+static void output_frames(video_frames *frames, void *arg, io_stream *io_s) {
+	fprintf(io_s->stdout, ",%d=>%lld", frames->frames[0].index, frames->frames[0].pts);
+}
 
-	read = getline(&line, &len, io_s->stdin);
-	sscanf(line, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld\n", &frame_width, &frame_height, &pixel_format, &frame_align, &cbuf_id, &cbuf_element_size, &cbuf_index, &pts);
-	fprintf(io_s->stdout, ",%d=>%lld", cbuf_index, pts);
+static void output_video_frame(video_frames *frames, void *arg, io_stream *io_s) {
+	fprintf(io_s->stdout, "video_frames:: width:%d height:%d format:%d align:%d cbuf:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->element_size, frames->frames[0].index, frames->frames[0].pts);
+	int size = *(int *)arg;
+
+	while((--size) && !read_frames(io_s, NULL, output_frames))
+		;
 
 	fprintf(io_s->stdout, "\n");
 	fflush(io_s->stdout);
+}
 
+int vbuf_main(int size, io_stream *io_s) {
+	while(!read_frames(io_s, &size, output_video_frame))
+		;
 	return 0;
 }

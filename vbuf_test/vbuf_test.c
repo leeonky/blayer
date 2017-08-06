@@ -55,7 +55,16 @@ SUBJECT(int) {
 	return vbuf_main(buf_size, &io_s);
 }
 
-SUITE_CASE("buffer data") {
+SUITE_CASE("no buffer data") {
+	buf_size = 1;
+	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
+}
+
+SUITE_CASE("full buffer data") {
 	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -63,9 +72,26 @@ SUITE_CASE("buffer data") {
 	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0,2=>41711\n");
 }
 
+SUITE_CASE("double full buffer data") {
+	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:3=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:4=>41711\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0,2=>41711\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:3=>0,4=>41711\n");
+}
+
+SUITE_CASE("to the end of file") {
+	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\n");
+}
+
+// different video format
 // to file end
-// different video
 // got EXIT
 // bad format
+// buf and buf
 
 SUITE_END(vbuf_test)
