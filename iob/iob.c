@@ -12,22 +12,25 @@ int iob_add_handler(io_bus *iob, const iob_handler *handler) {
 
 static iob_handler *select_handler(io_bus *iob, const char *command) {
 	int handler_count = iob->handler_count;
+	iob_handler *handler;
 	while(handler_count--)
-		if(!strcmp(iob->handlers[handler_count].command, command))
-			return &iob->handlers[handler_count];
+		if(!strcmp((handler = &iob->handlers[handler_count])->command, command))
+			return handler;
 	return NULL;
 }
 
 static void parse_line(const char *line, const char **command, const char **event_args) {
 	static char buf[128];
-	sscanf(line, "%s", buf);
-	*command = buf;
 
-	char *p = index(line, ' ');
-	if(p) {
-		*event_args = p+1;
-	} else {
-		*event_args = "";
+	buf[0] = '\0';
+	if(1==sscanf(line, "%s", buf)) {
+		*command = buf;
+		char *p = index(line, ' ');
+		if(p) {
+			*event_args = p+1;
+		} else {
+			*event_args = "";
+		}
 	}
 }
 

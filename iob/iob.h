@@ -4,8 +4,10 @@
 
 typedef struct io_bus io_bus;
 
+#define MAX_COMMAND_LEN 64
+
 typedef struct iob_handler {
-	const char *command;
+	char command[MAX_COMMAND_LEN];
 	void * arg;
 	void (*action)(io_bus *, const char *, const char *, void *, io_stream *);
 	void (*close)(io_bus *, void *, io_stream *);
