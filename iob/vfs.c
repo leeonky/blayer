@@ -6,12 +6,20 @@ static void process_video_frames(io_bus *iob, const char *command, const char *e
 	iob_video_frames_handler *handler = (iob_video_frames_handler *)arg; 
 	if(handler->action) {
 		video_frames frames;
-		const char *frames_args = strstr(event_args, "frames:");
 		sscanf(event_args, "w:%d h:%d fmt:%d align:%d cbuf:%d size:%d", &frames.width, &frames.height, &frames.format, &frames.align, &frames.cbuf_id, &frames.element_size);
 
-		frames.count = sscanf(frames_args, "frames:%d=>%lld\n"
-				, &frames.frames[0].index, &frames.frames[0].pts
-				)/2;
+		char *frames_args = strstr(event_args, "frames:");
+		if(frames_args) {
+			FILE *frames_stream = fmemopen(frames_args, strlen(frames_args)+1, "r");
+			if(frames_stream) {
+				if(2==fscanf(frames_stream, "frames:%d=>%lld", &frames.frames[0].index, &frames.frames[0].pts)) {
+					frames.count = 1;
+					while(frames.count<MAX_VIDEO_FRAMES_SIZE && 2==fscanf(frames_stream, ",%d=>%lld", &frames.frames[frames.count].index, &frames.frames[frames.count].pts))
+						frames.count++;
+				}
+				fclose(frames_stream);
+			}
+		}
 		handler->action(&frames, handler->arg, io_s);
 	}
 }

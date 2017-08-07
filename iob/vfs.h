@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "bputil/bputil.h"
 
-#define MAX_VIDEO_FRAMES_SIZE	256
+#define MAX_VIDEO_FRAMES_SIZE	64
 
 typedef struct video_frames {
 	int width, height, format, align, cbuf_id, element_size;
