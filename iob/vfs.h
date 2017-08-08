@@ -6,13 +6,15 @@
 
 #define MAX_VIDEO_FRAMES_SIZE	64
 
+typedef struct frame {
+	int index;
+	int64_t pts;
+} frame;
+
 typedef struct video_frames {
 	int width, height, format, align, cbuf_id, element_size;
 	size_t count;
-	struct frame {
-		int index;
-		int64_t pts;
-	} frames[MAX_VIDEO_FRAMES_SIZE];
+	frame frames[MAX_VIDEO_FRAMES_SIZE];
 } video_frames;
 
 typedef struct iob_video_frames_handler {

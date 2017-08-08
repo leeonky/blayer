@@ -57,35 +57,35 @@ SUBJECT(int) {
 
 SUITE_CASE("no buffer data") {
 	buf_size = 1;
-	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
 }
 
 SUITE_CASE("full buffer data") {
-	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0,2=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711\n");
 }
 
 SUITE_CASE("double full buffer data") {
-	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:2=>41711\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:3=>0\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:4=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:3=>100\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:4=>200\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0,2=>41711\nvideo_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:3=>0,4=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:3=>100,4=>200\n");
 }
 
 SUITE_CASE("to the end of file") {
-	init_subject("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("video_frames:: width:1920 height:1080 format:0 align:1 cbuf:950284 size:3112960 frames:1=>0\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
 }
 
 // different video format
@@ -93,5 +93,6 @@ SUITE_CASE("to the end of file") {
 // got EXIT
 // bad format
 // buf and buf
+// required size big than max
 
 SUITE_END(vbuf_test)

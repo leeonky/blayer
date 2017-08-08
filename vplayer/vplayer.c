@@ -34,6 +34,7 @@ static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) 
 
 static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 	iob_video_frames_handler handler = {
+		.arg = arg,
 		.action = process_frames,
 	};
 
