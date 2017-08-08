@@ -171,7 +171,7 @@ int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 extern const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
 	static __thread char buffer[1024];
 	AVCodecContext *codec_context = decoder->codec_context;
-	sprintf(buffer, "width:%d height:%d format:%d",
+	sprintf(buffer, "w:%d h:%d fmt:%d",
 			codec_context->width,
 			codec_context->height,
 			codec_context->pix_fmt);
