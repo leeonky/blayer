@@ -26,13 +26,20 @@ static int parse_video_frames(video_frames *frames, const char *event_args) {
 }
 
 static void process_video_frames(io_bus *iob, const char *command, const char *event_args, void *arg, io_stream *io_s) {
-	iob_video_frames_handler *handler = (iob_video_frames_handler *)arg; 
+	iob_video_frames_handler *handler = (iob_video_frames_handler *)arg;
 	if(handler->action) {
 		video_frames frames;
 		if(parse_video_frames(&frames, event_args))
 			fprintf(io_s->stderr, "Error[iob]: bad VFS: [%s]\n", event_args);
 		else
 			handler->action(&frames, handler->arg, io_s);
+	}
+}
+
+static void iob_close(io_bus *iob, void *arg, io_stream *io_s) {
+	iob_video_frames_handler *handler = (iob_video_frames_handler *)arg;
+	if(handler->close) {
+		handler->close(handler->arg, io_s);
 	}
 }
 
@@ -43,6 +50,7 @@ int iob_add_video_frames_handler(io_bus *iob, const iob_video_frames_handler *ha
 		.command = "VFS",
 		.arg = &vh,
 		.action = process_video_frames,
+		.close = iob_close,
 	};
 	return iob_add_handler(iob, &ioh);
 }

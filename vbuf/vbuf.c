@@ -59,10 +59,17 @@ static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) 
 	}
 }
 
+static void iob_close(void *arg, io_stream *io_s) {
+	vf_buf *vbuf = (vf_buf*)arg;
+	if(vbuf->count)
+		output_and_clean_vf_buf(vbuf, io_s);
+}
+
 static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 	iob_video_frames_handler handler = {
 		.arg = arg,
 		.action = process_frames,
+		.close = iob_close,
 	};
 
 	return iob_add_video_frames_handler(iob, &handler);

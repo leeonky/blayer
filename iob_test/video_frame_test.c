@@ -8,10 +8,13 @@ SUITE_START("video_frame_handler_test")
 static int int_arg;
 static void (*process_frames)(const video_frames *vfs, void *arg, io_stream *io_s);
 
+mock_void_function_2(iob_close_handler, void *, io_stream *);
+
 BEFORE_EACH() {
 	int_arg = 0;
 	process_frames = NULL;
 	init_subject("");
+	init_mock_function(iob_close_handler, NULL);
 	return 0;
 }
 
@@ -37,6 +40,7 @@ static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 	iob_video_frames_handler handler = {
 		.arg = &int_arg,
 		.action = process_frames,
+		.close = iob_close_handler,
 	};
 
 	iob_add_video_frames_handler(iob, &handler);
@@ -55,6 +59,9 @@ SUITE_CASE("invoke handler with right args") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_ASSERT_EQ(int_arg, 100);
+
+	CUE_EXPECT_CALLED_ONCE(iob_close_handler);
+	CUE_EXPECT_CALLED_WITH_PTR(iob_close_handler, 1, &int_arg);
 }
 
 static void process_many_frames(const video_frames *vfs, void *arg, io_stream *io_s) {

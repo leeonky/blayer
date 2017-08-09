@@ -96,13 +96,13 @@ SUITE_CASE("should log warning when required size big than max") {
 	CUE_ASSERT_STDERR_EQ("Error[vbuf]: required too much buffer\n");
 }
 
-/*SUITE_CASE("to the end of file") {*/
-	/*init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");*/
+SUITE_CASE("to the end of file") {
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
 
-	/*CUE_ASSERT_SUBJECT_SUCCEEDED();*/
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	/*CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");*/
-/*}*/
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
+}
 
 // different video format
 
