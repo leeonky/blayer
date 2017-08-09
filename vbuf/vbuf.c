@@ -37,18 +37,10 @@ typedef struct vf_buf {
 	video_frames frameses[MAX_BUFFER_SIZE];
 } vf_buf;
 
-static void output_video(video_frames *frame, io_stream *io_s) {
-	fprintf(io_s->stdout, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d size:%d frames:%d=>%lld", frame->width, frame->height, frame->format, frame->align, frame->cbuf_id, frame->element_size, frame->frames[0].index, frame->frames[0].pts);
-}
-
-static void output_append_frame(frame *frm, io_stream *io_s) {
-	fprintf(io_s->stdout, ",%d=>%lld", frm->index, frm->pts);
-}
-
 static void output_and_clean_vf_buf(vf_buf *vbuf, io_stream *io_s) {
 	video_frames *first = &vbuf->frameses[0];
 	int i,j;
-	output_video(first, io_s);
+	output_video_frames(first, io_s);
 	for(i=1; i<vbuf->count; ++i) {
 		output_append_frame(&vbuf->frameses[i].frames[0], io_s);
 	}
