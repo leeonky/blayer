@@ -42,7 +42,9 @@ static void output_and_clean_vf_buf(vf_buf *vbuf, io_stream *io_s) {
 	int i,j;
 	output_video_frames(first, io_s);
 	for(i=1; i<vbuf->count; ++i) {
-		output_append_frame(&vbuf->frameses[i].frames[0], io_s);
+		for(j=0; j<vbuf->frameses[i].count; ++j) {
+			output_append_frame(&vbuf->frameses[i].frames[j], io_s);
+		}
 	}
 	fprintf(io_s->stdout, "\n");
 	fflush(io_s->stdout);
@@ -68,6 +70,10 @@ static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 }
 
 int vbuf_main(int size, io_stream *io_s) {
+	if(size > MAX_BUFFER_SIZE) {
+		fprintf(io_s->stderr, "Error[vbuf]: required too much buffer\n");
+		return -1;
+	}
 	vf_buf buf = {
 		.size = size,
 	};
