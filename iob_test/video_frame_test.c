@@ -3,7 +3,7 @@
 #include "iob/iob.h"
 #include "iob/vfs.h"
 
-SUITE_START("video_frame_test");
+SUITE_START("video_frame_handler_test")
 
 static int int_arg;
 static void (*process_frames)(const video_frames *vfs, void *arg, io_stream *io_s);
@@ -71,6 +71,60 @@ SUITE_CASE("invoke handler with many frames") {
 	init_subject("VFS w:1 h:1 fmt:0 align:1 cbuf:1 size:1 frames:1=>2,2=>3,3=>4,4=>5,5=>6,6=>7,7=>8,8=>9,9=>10,10=>11,11=>12,12=>13,13=>14,14=>15,15=>16,16=>17,17=>18,18=>19,19=>20,20=>21,21=>22,22=>23,23=>24,24=>25,25=>26,26=>27,27=>28,28=>29,29=>30,30=>31,31=>32,32=>33,33=>34,34=>35,35=>36,36=>37,37=>38,38=>39,39=>40,40=>41,41=>42,42=>43,43=>44,44=>45,45=>46,46=>47,47=>48,48=>49,49=>50,50=>51,51=>52,52=>53,53=>54,54=>55,55=>56,56=>57,57=>58,58=>59,59=>60,60=>61,61=>62,62=>63,63=>64,64=>65\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
+}
+
+SUITE_END(video_frame_handler_test)
+
+static video_frames vframes;
+
+SUITE_START("video_frame_test")
+
+BEFORE_EACH() {
+	return init_subject("");
+}
+
+AFTER_EACH() {
+	return close_subject();
+}
+
+SUBJECT(int) {
+	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
+	output_video_frames(&vframes, &io_s);
+	return 0;
+}
+
+SUITE_CASE("output one frame") {
+	vframes.width = 1920;
+	vframes.height = 1080;
+	vframes.format = 3;
+	vframes.align = 1;
+	vframes.cbuf_id = 10;
+	vframes.element_size = 1024;
+	vframes.count = 1;
+	vframes.frames[0].index = 100;
+	vframes.frames[0].pts = (int64_t)123456789012345;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:3 align:1 cbuf:10 size:1024 frames:100=>123456789012345");
+}
+
+SUITE_CASE("output more than one frames") {
+	vframes.width = 1920;
+	vframes.height = 1080;
+	vframes.format = 3;
+	vframes.align = 1;
+	vframes.cbuf_id = 10;
+	vframes.element_size = 1024;
+	vframes.count = 2;
+	vframes.frames[0].index = 100;
+	vframes.frames[0].pts = (int64_t)123456789012345;
+	vframes.frames[1].index = 101;
+	vframes.frames[1].pts = (int64_t)543210987654321;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:3 align:1 cbuf:10 size:1024 frames:100=>123456789012345,101=>543210987654321");
 }
 
 SUITE_END(video_frame_test)

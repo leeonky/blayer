@@ -35,3 +35,12 @@ int iob_add_video_frames_handler(io_bus *iob, const iob_video_frames_handler *ha
 	return iob_add_handler(iob, &ioh);
 }
 
+void output_video_frames(const video_frames *frames, io_stream *io_s) {
+	int count;
+	fprintf(io_s->stdout, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->element_size, frames->frames[0].index, frames->frames[0].pts);
+
+	for(count=1; count<frames->count; ++count) {
+		fprintf(io_s->stdout, ",%d=>%lld", frames->frames[count].index, frames->frames[count].pts);
+	}
+}
+
