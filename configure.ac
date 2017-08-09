@@ -31,6 +31,7 @@ AC_CONFIG_FILES([Makefile])
 # Production Makefile
 AM_COND_IF([ENV_TEST], [],
 	  [AC_CONFIG_FILES([
+	   sys/Makefile
 	   bputil/Makefile
 	   iob/Makefile
 	   wrpffp/Makefile
@@ -46,6 +47,7 @@ AM_COND_IF([ENV_PRD], [],
 	   mock_ffmpeg/Makefile
 	   mock_sys/Makefile
 	   mock_sdl/Makefile
+	   sys_test/Makefile
 	   iob_test/Makefile
 	   wrpffp_test/Makefile
 	   vdecode_test/Makefile
