@@ -73,6 +73,47 @@ SUITE_CASE("invoke handler with many frames") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 }
 
+mock_void_function_3(dumy_handler, const video_frames *, void *, io_stream *);
+
+SUITE_CASE("record log when bad video format") {
+	init_mock_function(dumy_handler, NULL);
+	process_frames = dumy_handler;
+
+	init_subject("VFS bad\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDERR_EQ("Error[iob]: bad VFS: [bad\n]\n");
+
+	CUE_EXPECT_NEVER_CALLED(dumy_handler);
+}
+
+SUITE_CASE("record log when bad frames format") {
+	init_mock_function(dumy_handler, NULL);
+	process_frames = dumy_handler;
+
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:950284 size:3112960\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDERR_EQ("Error[iob]: bad VFS: [w:1920 h:1080 fmt:0 align:1 cbuf:950284 size:3112960\n]\n");
+
+	CUE_EXPECT_NEVER_CALLED(dumy_handler);
+}
+
+SUITE_CASE("record log when bad frames format 2") {
+	init_mock_function(dumy_handler, NULL);
+	process_frames = dumy_handler;
+
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:950284 size:3112960 frames:1=>\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDERR_EQ("Error[iob]: bad VFS: [w:1920 h:1080 fmt:0 align:1 cbuf:950284 size:3112960 frames:1=>\n]\n");
+
+	CUE_EXPECT_NEVER_CALLED(dumy_handler);
+}
+
 SUITE_END(video_frame_handler_test)
 
 static video_frames vframes;

@@ -105,6 +105,5 @@ SUITE_CASE("should log warning when required size big than max") {
 /*}*/
 
 // different video format
-// bad format
 
 SUITE_END(vbuf_test)
