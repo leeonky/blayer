@@ -40,3 +40,5 @@ ltmain.sh
 ###########
 *.test
 vdecode/vdecode
+vbuf/vbuf
+vplayer/vplayer

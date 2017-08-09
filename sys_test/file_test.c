@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <cunitexd.h>
 #include "sys/sys.h"
-#include "mock_sys/mock_sys.h"
+#include "mock.h"
 
 SUITE_START("fmemopen_test");
 
