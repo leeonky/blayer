@@ -65,8 +65,7 @@ static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 		.action = process_frames,
 	};
 
-	iob_add_video_frames_handler(iob, &handler);
-	return 0;
+	return iob_add_video_frames_handler(iob, &handler);
 }
 
 int vbuf_main(int size, io_stream *io_s) {

@@ -66,8 +66,9 @@ int iob_main(void *arg, int (*processer) (io_bus *, void *, io_stream *), io_str
 	if(processer) {
 		res = processer(&iob, arg, io_s);
 	}
-
-	if(!res) {
+	if(res) {
+		fprintf(io_s->stderr, "Error[libiob]: failed to setup iob handler\n");
+	} else {
 		process_command(&iob, io_s);
 	}
 	return res;

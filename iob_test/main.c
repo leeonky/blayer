@@ -66,6 +66,7 @@ SUITE_CASE("setup event failed") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-10);
 
 	CUE_ASSERT_STDOUT_EQ("");
+	CUE_ASSERT_STDERR_EQ("Error[libiob]: failed to setup iob handler\n");
 }
 
 SUITE_CASE("too many event") {
