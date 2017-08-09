@@ -1,23 +1,17 @@
 #include <string.h>
 #include "iob.h"
 #include "vfs.h"
+#include "sys/sys.h"
 
-static int parse_frames(video_frames *frames, char *frames_args) {
-	int res = 0;
-	FILE *frames_stream = fmemopen(frames_args, strlen(frames_args)+1, "r");
-	if(frames_stream) {
-		if(2==fscanf(frames_stream, "frames:%d=>%lld", &frames->frames[0].index, &frames->frames[0].pts)) {
-			frames->count = 1;
-			while(frames->count<MAX_VIDEO_FRAMES_SIZE && 2==fscanf(frames_stream, ",%d=>%lld", &frames->frames[frames->count].index, &frames->frames[frames->count].pts))
-				frames->count++;
-		} else	{
-			res = -1;
-		}
-		fclose(frames_stream);
-	} else	{
-		res = -1;
+static int parse_frames_in_stream(FILE *frames_stream, void *arg) {
+	video_frames *frames = (video_frames *)arg;
+	if(2==fscanf(frames_stream, "frames:%d=>%lld", &frames->frames[0].index, &frames->frames[0].pts)) {
+		frames->count = 1;
+		while(frames->count<MAX_VIDEO_FRAMES_SIZE && 2==fscanf(frames_stream, ",%d=>%lld", &frames->frames[frames->count].index, &frames->frames[frames->count].pts))
+			frames->count++;
+		return 0;
 	}
-	return res;
+	return -1;
 }
 
 static int parse_video_frames(video_frames *frames, const char *event_args) {
@@ -25,7 +19,7 @@ static int parse_video_frames(video_frames *frames, const char *event_args) {
 	if(6==sscanf(event_args, "w:%d h:%d fmt:%d align:%d cbuf:%d size:%d", &frames->width, &frames->height, &frames->format, &frames->align, &frames->cbuf_id, &frames->element_size)) {
 		char *frames_args = strstr(event_args, "frames:");
 		if(frames_args) {
-			return parse_frames(frames, frames_args);
+			return fmemprocess(frames_args, strlen(frames_args), "r", frames, parse_frames_in_stream);
 		}
 	}
 	return -1;
