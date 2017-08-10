@@ -38,9 +38,8 @@ typedef struct vf_buf {
 } vf_buf;
 
 static void output_and_clean_vf_buf(vf_buf *vbuf, io_stream *io_s) {
-	video_frames *first = &vbuf->frameses[0];
 	int i,j;
-	output_video_frames(first, io_s);
+	output_video_frames(&vbuf->frameses[0], io_s);
 	for(i=1; i<vbuf->count; ++i) {
 		for(j=0; j<vbuf->frameses[i].count; ++j) {
 			output_append_frame(&vbuf->frameses[i].frames[j], io_s);
@@ -51,10 +50,28 @@ static void output_and_clean_vf_buf(vf_buf *vbuf, io_stream *io_s) {
 	vbuf->count = 0;
 }
 
+static inline void append_video_frames(vf_buf *vbuf, const video_frames *vfs) {
+	vbuf->frameses[vbuf->count++] = *vfs;
+}
+
+static inline int is_vf_buf_full(vf_buf *vbuf) {
+	return vbuf->count == vbuf->size;
+}
+
+static inline int is_video_format_different(const video_frames *vfs1, const video_frames *vfs2) {
+	return vfs1->width != vfs2->width || vfs1->height != vfs2->height || vfs1->format != vfs2->format || vfs1->align != vfs2->align || vfs1->cbuf_id != vfs2->cbuf_id || vfs1->element_size != vfs2->element_size;
+}
+
+static inline int should_flush_output(vf_buf *vbuf, const video_frames *vfs) {
+	return vbuf->count && is_video_format_different(&vbuf->frameses[vbuf->count-1], vfs);
+}
+
 static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) {
 	vf_buf *vbuf = (vf_buf*)arg;
-	vbuf->frameses[vbuf->count++] = *vfs;
-	if(vbuf->count == vbuf->size) {
+	if(should_flush_output(vbuf, vfs))
+		output_and_clean_vf_buf(vbuf, io_s);
+	append_video_frames(vbuf, vfs);
+	if(is_vf_buf_full(vbuf)) {
 		output_and_clean_vf_buf(vbuf, io_s);
 	}
 }

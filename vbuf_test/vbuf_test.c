@@ -104,6 +104,12 @@ SUITE_CASE("to the end of file") {
 	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
 }
 
-// different video format
+SUITE_CASE("different video format") {
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:0 frames:2=>41711\n");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:0 frames:2=>41711\n");
+}
 
 SUITE_END(vbuf_test)

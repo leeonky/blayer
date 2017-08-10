@@ -4,6 +4,7 @@
 #include "iob/vfs.h"
 #include "vplayer.h"
 #include "SDL2/SDL.h"
+#include <unistd.h>
 
 sdl_window *wnd;
 SDL_Texture * sdlTexture;
@@ -25,6 +26,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 				dst_data[2], dst_linesize[2]); 
 		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, &rect);    
 		SDL_RenderPresent(wnd->renderer);
+		usleep(25000);
 	}
 }
 
