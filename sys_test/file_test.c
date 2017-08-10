@@ -65,3 +65,53 @@ SUITE_CASE("filed to open") {
 
 SUITE_END(fmemopen_test);
 
+
+SUITE_START("fopen_test");
+
+static FILE * stub_fopen(const char *name, const char *mode) {
+	return &file;
+}
+
+BEFORE_EACH() {
+	init_mock_function(fopen, stub_fopen);
+	init_mock_function(fclose, NULL);
+	init_mock_function(processer, NULL);
+	int_arg = 0;
+	return 0;
+}
+
+SUITE_CASE("open read and close") {
+	const char *name = "test";
+	init_mock_function(processer, processer_return_10);
+
+	CUE_ASSERT_EQ(fileprocess(name, "r", &int_arg, processer), 10);
+
+	CUE_EXPECT_CALLED_ONCE(fopen);
+	CUE_EXPECT_CALLED_WITH_STRING(fopen, 1, name);
+	CUE_EXPECT_CALLED_WITH_STRING(fopen, 2, "r");
+
+	CUE_EXPECT_CALLED_ONCE(processer);
+	CUE_EXPECT_CALLED_WITH_PTR(processer, 1, &file);
+	CUE_EXPECT_CALLED_WITH_PTR(processer, 2, &int_arg);
+
+
+	CUE_EXPECT_CALLED_ONCE(fclose);
+	CUE_EXPECT_CALLED_WITH_PTR(fclose, 1, &file);
+}
+
+static FILE *stub_fopen_error(const char *name, const char *mode) {
+	return NULL;
+}
+
+SUITE_CASE("filed to open") {
+	const char *name = "test";
+	init_mock_function(fopen, stub_fopen_error);
+
+	CUE_ASSERT_EQ(fileprocess(name, "r", &int_arg, processer), -1);
+
+	CUE_EXPECT_NEVER_CALLED(processer);
+
+	CUE_EXPECT_NEVER_CALLED(fclose);
+}
+
+SUITE_END(fopen_test);

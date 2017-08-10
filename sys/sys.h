@@ -4,5 +4,6 @@
 #include <stdio.h>
 
 int fmemprocess(void *, size_t, const char *, void *, int(*)(FILE *, void *));
+int fileprocess(const char *, const char *, void *, int(*)(FILE *, void *));
 
 #endif
