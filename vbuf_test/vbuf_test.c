@@ -57,35 +57,35 @@ SUBJECT(int) {
 
 SUITE_CASE("no buffer data") {
 	buf_size = 1;
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:2=>41711\n");
 }
 
 SUITE_CASE("full buffer data") {
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0,2=>41711\n");
 }
 
 SUITE_CASE("double full buffer data") {
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:3=>100\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:4=>200\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:3=>100\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:4=>200\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:3=>100,4=>200\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0,2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:3=>100,4=>200\n");
 }
 
 SUITE_CASE("buffer data with more frames") {
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:3=>100,4=>200\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0,2=>41711\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:3=>100,4=>200\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0,2=>41711,3=>100,4=>200\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0,2=>41711,3=>100,4=>200\n");
 }
 
 SUITE_CASE("should log warning when required size big than max") {
@@ -97,19 +97,19 @@ SUITE_CASE("should log warning when required size big than max") {
 }
 
 SUITE_CASE("to the end of file") {
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\n");
 }
 
 SUITE_CASE("different video format") {
-	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:0 frames:2=>41711\n");
+	init_subject("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:0 frames:2=>41711\n");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 size:0 frames:2=>41711\n");
+	CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:3112960 frames:1=>0\nVFS w:1920 h:1080 fmt:0 align:1 cbuf:32768 bits:3 size:0 frames:2=>41711\n");
 }
 
 SUITE_END(vbuf_test)

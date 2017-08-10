@@ -19,6 +19,7 @@ typedef struct shm_cbuf {
 	char *buffer;
 	size_t element_size;
 	int index;
+	int bits;
 	int mask;
 } shm_cbuf;
 

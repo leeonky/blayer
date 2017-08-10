@@ -59,7 +59,7 @@ static inline int is_vf_buf_full(vf_buf *vbuf) {
 }
 
 static inline int is_video_format_different(const video_frames *vfs1, const video_frames *vfs2) {
-	return vfs1->width != vfs2->width || vfs1->height != vfs2->height || vfs1->format != vfs2->format || vfs1->align != vfs2->align || vfs1->cbuf_id != vfs2->cbuf_id || vfs1->element_size != vfs2->element_size;
+	return vfs1->width != vfs2->width || vfs1->height != vfs2->height || vfs1->format != vfs2->format || vfs1->align != vfs2->align || vfs1->cbuf_id != vfs2->cbuf_id || vfs1->cbuf_size != vfs2->cbuf_size || vfs1->cbuf_bits != vfs2->cbuf_bits;
 }
 
 static inline int should_flush_output(vf_buf *vbuf, const video_frames *vfs) {

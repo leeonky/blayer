@@ -16,7 +16,7 @@ static int parse_frames_in_stream(FILE *frames_stream, void *arg) {
 
 static int parse_video_frames(video_frames *frames, const char *event_args) {
 	int res = 0;
-	if(6==sscanf(event_args, "w:%d h:%d fmt:%d align:%d cbuf:%d size:%d", &frames->width, &frames->height, &frames->format, &frames->align, &frames->cbuf_id, &frames->element_size)) {
+	if(7==sscanf(event_args, "w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d", &frames->width, &frames->height, &frames->format, &frames->align, &frames->cbuf_id, &frames->cbuf_bits, &frames->cbuf_size)) {
 		char *frames_args = strstr(event_args, "frames:");
 		if(frames_args) {
 			return fmemprocess(frames_args, strlen(frames_args), "r", frames, parse_frames_in_stream);
@@ -61,7 +61,7 @@ void output_append_frame(const frame *frm, io_stream *io_s) {
 
 void output_video_frames(const video_frames *frames, io_stream *io_s) {
 	int count;
-	fprintf(io_s->stdout, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->element_size, frames->frames[0].index, frames->frames[0].pts);
+	fprintf(io_s->stdout, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts);
 
 	for(count=1; count<frames->count; ++count) {
 		output_append_frame(&frames->frames[count], io_s);

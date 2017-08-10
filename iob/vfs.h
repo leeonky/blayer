@@ -12,7 +12,7 @@ typedef struct frame {
 } frame;
 
 typedef struct video_frames {
-	int width, height, format, align, cbuf_id, element_size;
+	int width, height, format, align, cbuf_id, cbuf_bits, cbuf_size;
 	size_t count;
 	frame frames[MAX_VIDEO_FRAMES_SIZE];
 } video_frames;
