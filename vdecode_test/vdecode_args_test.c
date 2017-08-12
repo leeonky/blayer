@@ -25,7 +25,7 @@ SUITE_CASE("should got error message when invalid arguments") {
 }
 
 SUITE_CASE("should got file name when only set video file") {
-	init_subject("", "test.avi");
+	init_subject("", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.video_index, -1);
@@ -33,7 +33,7 @@ SUITE_CASE("should got file name when only set video file") {
 }
 
 SUITE_CASE("can set opt of video track") {
-	init_subject("", "-v", "1", "test.avi");
+	init_subject("", "-v", "1", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.video_index, 1);
@@ -41,7 +41,7 @@ SUITE_CASE("can set opt of video track") {
 }
 
 SUITE_CASE("can set long opt of video track") {
-	init_subject("", "--video_index", "2", "test.avi");
+	init_subject("", "--video_index", "2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.video_index, 2);
@@ -49,7 +49,7 @@ SUITE_CASE("can set long opt of video track") {
 }
 
 SUITE_CASE("can add '=' between long opt and value") {
-	init_subject("", "--video_index=2", "test.avi");
+	init_subject("", "--video_index=2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.video_index, 2);
@@ -57,14 +57,14 @@ SUITE_CASE("can add '=' between long opt and value") {
 }
 
 SUITE_CASE("default of cbuf bits") {
-	init_subject("", "test.avi");
+	init_subject("", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.buffer_bits, 4);
 }
 
 SUITE_CASE("can set cbuf bits") {
-	init_subject("", "-b 3", "test.avi");
+	init_subject("", "-b 3", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.buffer_bits, 3);

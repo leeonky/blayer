@@ -5,7 +5,6 @@
 #include "vbuf.h"
 
 int process_args(vbuf_args *args, int argc, char **argv, FILE *stderr) {
-	args->input = NULL;
 	args->size = 8;
 
 	int option_index = 0, c;
@@ -20,12 +19,6 @@ int process_args(vbuf_args *args, int argc, char **argv, FILE *stderr) {
 				sscanf(optarg, "%d", &args->size);
 				break;
 		}
-	}
-	if(optind < argc)
-		args->input = argv[optind];
-	if(!args->input) {
-		fprintf(stderr, "Error[vbuf]: require input file\n");
-		return -1;
 	}
 	return 0;
 }

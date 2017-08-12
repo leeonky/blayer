@@ -1,0 +1,6 @@
+bits=${1}
+bits=${bits:=4}
+
+vdecode/vdecode /share/splayer_lib/media/hd_dolby_countdown_v1_lossless.m2ts -b $bits |
+vbuf/vbuf -s $(((1<<bits)/2)) |
+vplayer/vplayer

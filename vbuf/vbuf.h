@@ -4,7 +4,6 @@
 #include "bputil/bputil.h"
 
 typedef struct vbuf_args {
-	const char *input;
 	int size;
 } vbuf_args;
 

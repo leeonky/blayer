@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #include <cunitexd.h>
 
-/*find video track*/
-/*docode*/
-/*out put*/
-
 int main() {
 	init_test();
 

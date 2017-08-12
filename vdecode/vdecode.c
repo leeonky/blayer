@@ -32,11 +32,17 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 		}
 	}
 	if(optind < argc)
-		args->file_name = argv[optind];
+		args->file_name = argv[optind++];
 	if(!args->file_name) {
 		fprintf(stderr, "Error[vdecode]: require video file\n");
 		return -1;
 	}
+	/*if(optind < argc)*/
+		/*args->output = argv[optind++];*/
+	/*if(!args->output) {*/
+		/*fprintf(stderr, "Error[vdecode]: require output file\n");*/
+		/*return -1;*/
+	/*}*/
 	return 0;
 }
 
@@ -44,7 +50,7 @@ static int process_decoded_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, v
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
 	if(!ffmpeg_frame_copy(frame, shrb_allocate(cbuf), cbuf->element_size, 1, io_s)) {
 		fprintf(io_s->stdout, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));
-		fprintf(io_s->stderr, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));
+		/*fprintf(io_s->stderr, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));*/
 		fflush(io_s->stdout);
 	}
 }
@@ -71,10 +77,11 @@ static int process_video_stream(ffmpeg_stream *stream, void *arg, io_stream *io_
 
 int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
 	vdecode_args args;
-	io_stream io_s = {stdin, stdout, stderr};
 	app_context context = {&args};
 
-	if(process_args(&args, argc, argv, stderr))
-		return -1;
-	return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.video_index, &context, process_video_stream, &io_s);
+	if(!process_args(&args, argc, argv, stderr)) {
+		io_stream io_s = {stdin, stdout, stderr};
+		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.video_index, &context, process_video_stream, &io_s);
+	}
+	return -1;
 }

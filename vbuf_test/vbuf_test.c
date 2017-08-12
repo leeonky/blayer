@@ -22,17 +22,7 @@ SUBJECT(int) {
 SUITE_CASE("default buffer count is 8") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_ASSERT_STRING_EQ(args.input, "input");
-
 	CUE_ASSERT_EQ(args.size, 8);
-}
-
-SUITE_CASE("should not miss the input") {
-	init_subject("");
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_ASSERT_STDERR_EQ("Error[vbuf]: require input file\n");
 }
 
 SUITE_END(vbuf_arg_test)
