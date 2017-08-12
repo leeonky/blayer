@@ -53,6 +53,7 @@ static int process_decoded_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, v
 		/*fprintf(io_s->stderr, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));*/
 		fflush(io_s->stdout);
 	}
+	return 0;
 }
 
 static int decoding_video_stream(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {

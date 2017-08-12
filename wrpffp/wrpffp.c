@@ -75,12 +75,12 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 	ffmpeg_decoder decoder;
 	AVCodec *codec;
 	decoder.stream = stream;
-	if(codec = avcodec_find_decoder(stream->stream->codecpar->codec_id)) {
-		if (decoder.codec_context = avcodec_alloc_context3(codec)) {
+	if((codec = avcodec_find_decoder(stream->stream->codecpar->codec_id))) {
+		if ((decoder.codec_context = avcodec_alloc_context3(codec))) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
-				if(decoder.frame = av_frame_alloc()) {
-					if(decoder.tmp_frame = av_frame_alloc()) {
+				if((decoder.frame = av_frame_alloc())) {
+					if((decoder.tmp_frame = av_frame_alloc())) {
 						if (process) {
 							res = process(stream, &decoder, arg, io_s);
 						}

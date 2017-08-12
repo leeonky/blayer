@@ -18,7 +18,7 @@ typedef struct io_stream {
 typedef struct shm_cbuf {
 	int shm_id;
 	char *buffer;
-	size_t element_size;
+	int element_size;
 	int index;
 	int bits;
 	size_t element_count;

@@ -1,11 +1,12 @@
+#include <unistd.h>
+#include <time.h>
+#include <libavformat/avformat.h>
 #include "bputil/bputil.h"
 #include "wrpsdl/wrpsdl.h"
 #include "iob/iob.h"
 #include "iob/vfs.h"
 #include "vplayer.h"
 #include "SDL2/SDL.h"
-#include <unistd.h>
-#include <time.h>
 
 sdl_window *wnd;
 SDL_Texture * sdlTexture;
@@ -17,7 +18,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	int i;
 
 	for(i=0; i<vfs->count; ++i) {
-		clock_t begin = clock();
+		/*clock_t begin = clock();*/
 		av_image_fill_arrays(dst_data, dst_linesize, shrb_get(cb, vfs->frames[i].index), vfs->format, vfs->width, vfs->height, vfs->align);
 
 		SDL_Rect rect = {0, 0, vfs->width, vfs->height};
@@ -29,11 +30,12 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, &rect);    
 		SDL_RenderPresent(wnd->renderer);
 		shrb_free(cb);
-		clock_t end = clock();
-		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
+		/*clock_t end = clock();*/
+		/*double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;*/
 		/*printf("%f\n", time_spent);*/
 		/*usleep(25000);*/
 	}
+	return 0;
 }
 
 static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) {
@@ -59,7 +61,7 @@ static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
 	ssize_t read;
 	wnd = window;
 
-	sdlTexture = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, 1920, 1080);
+	sdlTexture = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, 640, 480);
 	iob_main(NULL, setup_frames_event, io_s);
 	return 0;
 }
@@ -67,7 +69,7 @@ static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
 int vplayer_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
 	const char *input = argv[1];
 	io_stream io_s = {stdin, stdout, stderr};
-	sdl_open_window("test", 0, 0, 1920, 1080, 0, NULL, process_video, &io_s);
+	sdl_open_window("test", 0, 0, 640, 480, 0, NULL, process_video, &io_s);
 	return 0;
 }
 
