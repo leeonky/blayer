@@ -23,18 +23,22 @@ static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
 	rb->index = 0;
 }
 
-static int map_and_process(shm_cbuf *rb, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+static int map_and_process(int isnew, shm_cbuf *rb, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	if ((rb->buffer = shmat(rb->shm_id, NULL, 0)) != (void *)-1) {
 		rb->semaphore = (sem_t *)(rb->buffer + rb->element_size*rb->element_count);
-		if(-1 != sem_init(rb->semaphore, 1, rb->element_count)) {
-			if (process) {
+		if (process) {
+			if(isnew) {
+				if(-1 != sem_init(rb->semaphore, 1, rb->element_count)) {
+					res = process(rb, arg, io_s);
+					sem_destroy(rb->semaphore);
+				} else {
+					res = -1;
+					output_errno(io_s);
+				}
+			} else {
 				res = process(rb, arg, io_s);
 			}
-			sem_destroy(rb->semaphore);
-		} else {
-			res = -1;
-			output_errno(io_s);
 		}
 		shmdt(rb->buffer);
 	} else {
@@ -49,7 +53,7 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
 	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count) + align_to_pagesize(sizeof(sem_t)), 0666 | IPC_CREAT)) != -1) {
-		res = map_and_process(&cbuf, arg, process, io_s);
+		res = map_and_process(1, &cbuf, arg, process, io_s);
 		shmctl(cbuf.shm_id, IPC_RMID, NULL);
 	} else {
 		res = -1;
@@ -66,7 +70,14 @@ void *shrb_get(shm_cbuf *rb, int index) {
 	return get_inner(rb, index);
 }
 
+void shrb_free(shm_cbuf *rb) {
+	if(-1 == sem_post(rb->semaphore))
+		perror("semaphore post error");
+}
+
 void *shrb_allocate(shm_cbuf *rb) {
+	if(-1 == sem_wait(rb->semaphore))
+		perror("semaphore wait error");
 	rb->index = (rb->index+1) & rb->mask;
 	return get_inner(rb, rb->index);
 }
@@ -75,7 +86,7 @@ int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbu
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
 	cbuf.shm_id = id;
-	return map_and_process(&cbuf, arg, process, io_s);
+	return map_and_process(0, &cbuf, arg, process, io_s);
 }
 
 const char *shrb_info(shm_cbuf *cbuf) {

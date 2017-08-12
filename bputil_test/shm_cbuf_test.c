@@ -51,7 +51,6 @@ BEFORE_EACH() {
 	init_mock_function(sem_init, NULL);
 	init_mock_function(sem_destroy, NULL);
 	init_mock_function(sem_wait, NULL);
-	init_mock_function(sem_post, NULL);
 
 	return 0;
 }
@@ -198,8 +197,12 @@ static int process_assert_allocate(shm_cbuf *rb, void *arg, io_stream *io_s) {
 SUITE_CASE("allocate buffer") {
 	cbuf_process = process_assert_allocate;
 	e_size = getpagesize() - 1;
+	char *sem_t_ptr = buffer_data+getpagesize()*(1<<bits);
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(sem_wait);
+	CUE_EXPECT_CALLED_WITH_PTR(sem_wait, 1, sem_t_ptr);
 }
 
 static int process_assert_allocate_in_range(shm_cbuf *rb, void *arg, io_stream *io_s) {
@@ -233,6 +236,9 @@ BEFORE_EACH() {
 	init_mock_function(shmctl, NULL);
 	init_mock_function(strerror, stub_strerror);
 
+	init_mock_function(sem_init, NULL);
+	init_mock_function(sem_destroy, NULL);
+	init_mock_function(sem_post, NULL);
 	return 0;
 }
 
@@ -259,6 +265,25 @@ SUITE_CASE("load with shmid") {
 	CUE_EXPECT_CALLED_WITH_INT(shmdt, 1, buffer);
 
 	CUE_ASSERT_EQ(int_arg, 100);
+}
+
+SUITE_CASE("should not init and destroy sem_t") {
+	e_size = getpagesize() - 1;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_NEVER_CALLED(sem_init);
+
+	CUE_EXPECT_NEVER_CALLED(sem_destroy);
+}
+
+SUITE_CASE("free one element") {
+	shm_cbuf buf;
+
+	shrb_free(&buf);
+
+	CUE_EXPECT_CALLED_ONCE(sem_post);
+	CUE_EXPECT_CALLED_WITH_PTR(sem_post, 1, buf.semaphore);
 }
 
 SUITE_END(shm_cbuf_load_test);

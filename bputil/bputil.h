@@ -32,6 +32,8 @@ void *shrb_get(shm_cbuf *, int index);
 
 void *shrb_allocate(shm_cbuf *);
 
+void shrb_free(shm_cbuf *);
+
 int shrb_new(size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);
 
 int shrb_load(int, size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);

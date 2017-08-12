@@ -5,6 +5,7 @@
 #include "vplayer.h"
 #include "SDL2/SDL.h"
 #include <unistd.h>
+#include <time.h>
 
 sdl_window *wnd;
 SDL_Texture * sdlTexture;
@@ -16,6 +17,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	int i;
 
 	for(i=0; i<vfs->count; ++i) {
+		clock_t begin = clock();
 		av_image_fill_arrays(dst_data, dst_linesize, shrb_get(cb, vfs->frames[i].index), vfs->format, vfs->width, vfs->height, vfs->align);
 
 		SDL_Rect rect = {0, 0, vfs->width, vfs->height};
@@ -26,7 +28,11 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 				dst_data[2], dst_linesize[2]); 
 		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, &rect);    
 		SDL_RenderPresent(wnd->renderer);
-		usleep(25000);
+		shrb_free(cb);
+		clock_t end = clock();
+		double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
+		/*printf("%f\n", time_spent);*/
+		/*usleep(25000);*/
 	}
 }
 
