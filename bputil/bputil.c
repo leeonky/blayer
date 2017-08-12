@@ -10,19 +10,31 @@ static void output_errno(io_stream *io_s) {
 	print_stack(io_s->stderr);
 }
 
-static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
+static size_t align_to_pagesize(size_t size) {
 	size_t page_size = getpagesize();
-	rb->element_size = (size+page_size-1)/page_size*page_size;
+	return (size+page_size-1)/page_size*page_size;
+}
+
+static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
+	rb->element_size = align_to_pagesize(size);
 	rb->bits = bits;
-	rb->mask = (1<<bits)-1;
+	rb->element_count = 1<<bits;
+	rb->mask = rb->element_count-1;
 	rb->index = 0;
 }
 
 static int map_and_process(shm_cbuf *rb, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	if ((rb->buffer = shmat(rb->shm_id, NULL, 0)) != (void *)-1) {
-		if (process) {
-			res = process(rb, arg, io_s);
+		rb->semaphore = (sem_t *)(rb->buffer + rb->element_size*rb->element_count);
+		if(-1 != sem_init(rb->semaphore, 1, rb->element_count)) {
+			if (process) {
+				res = process(rb, arg, io_s);
+			}
+			sem_destroy(rb->semaphore);
+		} else {
+			res = -1;
+			output_errno(io_s);
 		}
 		shmdt(rb->buffer);
 	} else {
@@ -36,7 +48,7 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	int res = 0;
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
-	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size * (cbuf.mask+1), 0666 | IPC_CREAT)) != -1) {
+	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count) + align_to_pagesize(sizeof(sem_t)), 0666 | IPC_CREAT)) != -1) {
 		res = map_and_process(&cbuf, arg, process, io_s);
 		shmctl(cbuf.shm_id, IPC_RMID, NULL);
 	} else {
@@ -46,13 +58,17 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	return res;
 }
 
-void *shrb_get(shm_cbuf *rb, int index) {
+static inline void * get_inner(shm_cbuf *rb, int index) {
 	return rb->buffer + index*rb->element_size;
+}
+
+void *shrb_get(shm_cbuf *rb, int index) {
+	return get_inner(rb, index);
 }
 
 void *shrb_allocate(shm_cbuf *rb) {
 	rb->index = (rb->index+1) & rb->mask;
-	return shrb_get(rb, rb->index);
+	return get_inner(rb, rb->index);
 }
 
 int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {

@@ -2,6 +2,7 @@
 #define BPUTIL_H
 
 #include <stdio.h>
+#include <semaphore.h>
 
 typedef struct io_stream {
 	FILE *stdin, *stdout, *stderr;
@@ -20,7 +21,9 @@ typedef struct shm_cbuf {
 	size_t element_size;
 	int index;
 	int bits;
+	size_t element_count;
 	int mask;
+	sem_t *semaphore;
 } shm_cbuf;
 
 void *shrb_get(shm_cbuf *, int index);
