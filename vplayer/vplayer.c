@@ -31,6 +31,9 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 }
 
 static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) {
+	fprintf(stderr, "\n==================\n");
+	output_video_frames(vfs, stderr);
+	fprintf(stderr, "\n==================\n");
 	shrb_load(vfs->cbuf_id, vfs->cbuf_bits, vfs->cbuf_size, (void *)vfs, process_frame, io_s);
 }
 

@@ -64,7 +64,7 @@ int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbu
 
 const char *shrb_info(shm_cbuf *cbuf) {
 	static __thread char buffer[1024];
-	sprintf(buffer, "cbuf:%d bits: %d size:%d", cbuf->shm_id, cbuf->bits, cbuf->element_size);
+	sprintf(buffer, "cbuf:%d bits:%d size:%d", cbuf->shm_id, cbuf->bits, cbuf->element_size);
 	return buffer;
 }
 

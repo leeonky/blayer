@@ -44,6 +44,7 @@ static int process_decoded_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, v
 	shm_cbuf *cbuf = ((app_context *)arg)-> cbuf;
 	if(!ffmpeg_frame_copy(frame, shrb_allocate(cbuf), cbuf->element_size, 1, io_s)) {
 		fprintf(io_s->stdout, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));
+		fprintf(io_s->stderr, "VFS %s align:%d %s frames:%d=>%lld\n", ffmpeg_video_info(decoder), 1, shrb_info(cbuf), shrb_index(cbuf), ffmpeg_frame_present_timestamp(frame));
 		fflush(io_s->stdout);
 	}
 }

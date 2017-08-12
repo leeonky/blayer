@@ -25,8 +25,8 @@ typedef struct iob_video_frames_handler {
 
 int iob_add_video_frames_handler(io_bus *, const iob_video_frames_handler *);
 
-void output_append_frame(const frame *, io_stream *);
+void output_append_frame(const frame *, FILE *);
 
-void output_video_frames(const video_frames *, io_stream *);
+void output_video_frames(const video_frames *, FILE *);
 
 #endif

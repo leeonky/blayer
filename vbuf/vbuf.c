@@ -39,12 +39,10 @@ typedef struct vf_buf {
 
 static void output_and_clean_vf_buf(vf_buf *vbuf, io_stream *io_s) {
 	int i,j;
-	output_video_frames(&vbuf->frameses[0], io_s);
-	for(i=1; i<vbuf->count; ++i) {
-		for(j=0; j<vbuf->frameses[i].count; ++j) {
-			output_append_frame(&vbuf->frameses[i].frames[j], io_s);
-		}
-	}
+	output_video_frames(&vbuf->frameses[0], io_s->stdout);
+	for(i=1; i<vbuf->count; ++i)
+		for(j=0; j<vbuf->frameses[i].count; ++j)
+			output_append_frame(&vbuf->frameses[i].frames[j], io_s->stdout);
 	fprintf(io_s->stdout, "\n");
 	fflush(io_s->stdout);
 	vbuf->count = 0;
@@ -62,18 +60,17 @@ static inline int is_video_format_different(const video_frames *vfs1, const vide
 	return vfs1->width != vfs2->width || vfs1->height != vfs2->height || vfs1->format != vfs2->format || vfs1->align != vfs2->align || vfs1->cbuf_id != vfs2->cbuf_id || vfs1->cbuf_size != vfs2->cbuf_size || vfs1->cbuf_bits != vfs2->cbuf_bits;
 }
 
-static inline int should_flush_output(vf_buf *vbuf, const video_frames *vfs) {
+static inline int is_different_video(vf_buf *vbuf, const video_frames *vfs) {
 	return vbuf->count && is_video_format_different(&vbuf->frameses[vbuf->count-1], vfs);
 }
 
 static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) {
 	vf_buf *vbuf = (vf_buf*)arg;
-	if(should_flush_output(vbuf, vfs))
+	if(is_different_video(vbuf, vfs))
 		output_and_clean_vf_buf(vbuf, io_s);
 	append_video_frames(vbuf, vfs);
-	if(is_vf_buf_full(vbuf)) {
+	if(is_vf_buf_full(vbuf))
 		output_and_clean_vf_buf(vbuf, io_s);
-	}
 }
 
 static void iob_close(void *arg, io_stream *io_s) {

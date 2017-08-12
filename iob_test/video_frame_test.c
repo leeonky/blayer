@@ -140,8 +140,7 @@ AFTER_EACH() {
 }
 
 SUBJECT(int) {
-	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	output_video_frames(&vframes, &io_s);
+	output_video_frames(&vframes, actxt.output_stream);
 	return 0;
 }
 

@@ -55,16 +55,16 @@ int iob_add_video_frames_handler(io_bus *iob, const iob_video_frames_handler *ha
 	return iob_add_handler(iob, &ioh);
 }
 
-void output_append_frame(const frame *frm, io_stream *io_s) {
-	fprintf(io_s->stdout, ",%d=>%lld", frm->index, frm->pts);
+void output_append_frame(const frame *frm, FILE *out) {
+	fprintf(out, ",%d=>%lld", frm->index, frm->pts);
 }
 
-void output_video_frames(const video_frames *frames, io_stream *io_s) {
+void output_video_frames(const video_frames *frames, FILE *out) {
 	int count;
-	fprintf(io_s->stdout, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts);
+	fprintf(out, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts);
 
 	for(count=1; count<frames->count; ++count) {
-		output_append_frame(&frames->frames[count], io_s);
+		output_append_frame(&frames->frames[count], out);
 	}
 }
 
