@@ -104,6 +104,7 @@ SUITE_CASE("create shm with elements size bigger than pagesize") {
 	CUE_EXPECT_CALLED_WITH_INT(shmget, 2, getpagesize()*2*4 + align_sem_t_size());
 }
 
+#ifndef __APPLE__
 SUITE_CASE("create sem_t with end of shm") {
 	bits = 3;
 	e_size = getpagesize();
@@ -119,6 +120,7 @@ SUITE_CASE("create sem_t with end of shm") {
 	CUE_EXPECT_CALLED_ONCE(sem_destroy);
 	CUE_EXPECT_CALLED_WITH_PTR(sem_destroy, 1, sem_t_ptr);
 }
+#endif
 
 static int test_cbuf_process_failed(shm_cbuf *rb, void *arg, io_stream *io_s) {
 	return 1000;
@@ -152,8 +154,10 @@ SUITE_CASE("failed to create shm") {
 	CUE_EXPECT_NEVER_CALLED(shmdt);
 	CUE_EXPECT_NEVER_CALLED(shmctl);
 
+#ifndef __APPLE__
 	CUE_EXPECT_NEVER_CALLED(sem_init);
 	CUE_EXPECT_NEVER_CALLED(sem_destroy);
+#endif
 
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
 }
@@ -181,6 +185,7 @@ SUITE_CASE("failed to map shm") {
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
 }
 
+#ifndef __APPLE__
 SUITE_CASE("failed to init semaphore") {
 	init_mock_function(sem_init, stub_sem_init_failed);
 
@@ -188,6 +193,7 @@ SUITE_CASE("failed to init semaphore") {
 
 	CUE_EXPECT_NEVER_CALLED(sem_destroy);
 }
+#endif
 
 static int process_assert_allocate(shm_cbuf *rb, void *arg, io_stream *io_s) {
 	CUE_ASSERT_PTR_EQ(shrb_allocate(rb), buffer + getpagesize());
@@ -201,8 +207,10 @@ SUITE_CASE("allocate buffer") {
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
+#ifndef __APPLE__
 	CUE_EXPECT_CALLED_ONCE(sem_wait);
 	CUE_EXPECT_CALLED_WITH_PTR(sem_wait, 1, sem_t_ptr);
+#endif
 }
 
 static int process_assert_allocate_in_range(shm_cbuf *rb, void *arg, io_stream *io_s) {

@@ -35,7 +35,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 		/*clock_t end = clock();*/
 		/*double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;*/
 		/*printf("%f\n", time_spent);*/
-		/*usleep(25000);*/
+		usleep(33000);
 	}
 	return 0;
 }

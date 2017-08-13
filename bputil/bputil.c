@@ -23,11 +23,34 @@ static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
 	rb->index = 0;
 }
 
+#define SEM_NAME "/blayer-video"
+
 static int map_and_process(int isnew, shm_cbuf *rb, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	if ((rb->buffer = shmat(rb->shm_id, NULL, 0)) != (void *)-1) {
-		rb->semaphore = (sem_t *)(rb->buffer + rb->element_size*rb->element_count);
 		if (process) {
+#ifdef __APPLE__
+			if(isnew) {
+				sem_unlink(SEM_NAME);
+				if(SEM_FAILED != (rb->semaphore = sem_open(SEM_NAME, O_CREAT|O_EXCL, 0644, rb->element_count))) {
+					res = process(rb, arg, io_s);
+					sem_close(rb->semaphore);
+					sem_unlink(SEM_NAME);
+				} else {
+					res = -1;
+					output_errno(io_s);
+				}
+			} else {
+				if(SEM_FAILED != (rb->semaphore = sem_open(SEM_NAME, 0))) {
+					res = process(rb, arg, io_s);
+					sem_close(rb->semaphore);
+				} else {
+					res = -1;
+					output_errno(io_s);
+				}
+			}
+#else
+			rb->semaphore = (sem_t *)(rb->buffer + rb->element_size*rb->element_count);
 			if(isnew) {
 				if(-1 != sem_init(rb->semaphore, 1, rb->element_count)) {
 					res = process(rb, arg, io_s);
@@ -39,6 +62,7 @@ static int map_and_process(int isnew, shm_cbuf *rb, void *arg, int(*process)(shm
 			} else {
 				res = process(rb, arg, io_s);
 			}
+#endif
 		}
 		shmdt(rb->buffer);
 	} else {

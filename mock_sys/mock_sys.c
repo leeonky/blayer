@@ -10,3 +10,13 @@ mock_function_3(int, sem_init, sem_t *, int, unsigned int);
 mock_function_1(int, sem_destroy, sem_t *);
 mock_function_1(int, sem_wait, sem_t *);
 mock_function_1(int, sem_post, sem_t *);
+
+#ifdef __APPLE__
+
+sem_t *sem_open(const char *name, int oflag, ...) {
+	return (sem_t *)name;
+}
+mock_function_1(int, sem_close, sem_t *);
+mock_function_1(int, sem_unlink, const char *);
+
+#endif
