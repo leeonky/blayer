@@ -13,7 +13,7 @@ int sdl_open_window(const char *title, int x, int y, int w, int h, Uint32 flag, 
 		if((window.window = SDL_CreateWindow(title, x, y, w, h, flag))) {
 			SDL_ShowCursor(SDL_DISABLE);
 			/*if(window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_ACCELERATED)) {*/
-			if((window.renderer = SDL_CreateRenderer(window.window, -1, 0))) {
+			if((window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_PRESENTVSYNC))) {
 				if(process) {
 					res = process(&window, arg, io_s);
 				}
