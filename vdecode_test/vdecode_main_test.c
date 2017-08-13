@@ -130,7 +130,7 @@ AFTER_EACH() {
 	/*CUE_EXPECT_CALLED_ONCE(avformat_close_input);*/
 /*}*/
 
-static stub_av_read_frame_return_an_unexpect_packet(AVFormatContext *format_context, AVPacket * packet) {
+static int stub_av_read_frame_return_an_unexpect_packet(AVFormatContext *format_context, AVPacket * packet) {
 	packet->stream_index = 1;
 	return -(read_frame_times++);
 }

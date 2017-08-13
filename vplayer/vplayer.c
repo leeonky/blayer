@@ -1,6 +1,6 @@
+#include <libavutil/imgutils.h>
 #include <unistd.h>
 #include <time.h>
-#include <libavformat/avformat.h>
 #include "bputil/bputil.h"
 #include "wrpsdl/wrpsdl.h"
 #include "iob/iob.h"
@@ -11,6 +11,8 @@
 sdl_window *wnd;
 SDL_Texture * sdlTexture;
 
+/*int av_image_fill_arrays(uint8_t *dst_data[4], int dst_linesize[4], const uint8_t *src, enum AVPixelFormat pix_fmt, int width, int height, int align);	*/
+
 static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	video_frames *vfs = (video_frames *)arg;
 	uint8_t *dst_data[4];
@@ -19,7 +21,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 
 	for(i=0; i<vfs->count; ++i) {
 		/*clock_t begin = clock();*/
-		av_image_fill_arrays(dst_data, dst_linesize, shrb_get(cb, vfs->frames[i].index), vfs->format, vfs->width, vfs->height, vfs->align);
+		av_image_fill_arrays(dst_data, dst_linesize, (const uint8_t *)shrb_get(cb, vfs->frames[i].index), vfs->format, vfs->width, vfs->height, vfs->align);
 
 		SDL_Rect rect = {0, 0, vfs->width, vfs->height};
 
@@ -61,7 +63,7 @@ static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
 	ssize_t read;
 	wnd = window;
 
-	sdlTexture = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, 640, 480);
+	sdlTexture = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, 1920, 1080);
 	iob_main(NULL, setup_frames_event, io_s);
 	return 0;
 }
@@ -69,7 +71,7 @@ static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
 int vplayer_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
 	const char *input = argv[1];
 	io_stream io_s = {stdin, stdout, stderr};
-	sdl_open_window("test", 0, 0, 640, 480, 0, NULL, process_video, &io_s);
+	sdl_open_window("test", 0, 0, 1920, 1080, 0, NULL, process_video, &io_s);
 	return 0;
 }
 

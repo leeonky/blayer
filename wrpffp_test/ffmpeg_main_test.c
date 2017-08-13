@@ -78,7 +78,7 @@ SUITE_CASE("should output avformat_open_input error message and exit") {
 	CUE_ASSERT_EQ(int_arg, 0);
 }
 
-static int stub_avformat_find_stream_info_error(AVFormatContext **ps, const char *url, AVInputFormat *fmt, AVDictionary **options) {
+static int stub_avformat_find_stream_info_error(AVFormatContext *ps, AVDictionary **options) {
 	return -2;
 }
 

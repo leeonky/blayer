@@ -1,4 +1,6 @@
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+
 #include "wrpffp.h"
 
 static int print_error(int no, FILE *stderr) {
@@ -184,7 +186,7 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io
 	AVFrame *avframe = frame->decoder->frame;
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	if (AVMEDIA_TYPE_VIDEO == codec_context->codec_type) {
-		if((ret=av_image_copy_to_buffer(buf, size, avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
+		if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
 			res = print_error(ret, io_s->stderr);
 	} else {
 		fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);

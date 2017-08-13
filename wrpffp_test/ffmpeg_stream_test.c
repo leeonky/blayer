@@ -27,6 +27,8 @@ static const char *stub_av_get_media_type_string(enum AVMediaType type) {
 			return "video";
 		case AVMEDIA_TYPE_AUDIO:
 			return "audio";
+		default:
+			break;
 	}
 	return "unkown";
 }

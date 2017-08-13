@@ -30,7 +30,7 @@ static int test_cbuf_process(shm_cbuf *rb, void *arg, io_stream *io_s) {
 	return 0;
 }
 
-static const char *stub_strerror(int e) {
+static char *stub_strerror(int e) {
 	static char buffer[256];
 	sprintf(buffer, "%d", e);
 	return buffer;
@@ -85,12 +85,12 @@ SUITE_CASE("create private shm buffer for cbuf, elements size is smaller than pa
 	CUE_EXPECT_CALLED_WITH_INT(shmat, 3, 0);
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
-	CUE_EXPECT_CALLED_WITH_INT(shmdt, 1, buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, buffer);
 
 	CUE_EXPECT_CALLED_ONCE(shmctl);
 	CUE_EXPECT_CALLED_WITH_INT(shmctl, 1, shmid);
 	CUE_EXPECT_CALLED_WITH_INT(shmctl, 2, IPC_RMID);
-	CUE_EXPECT_CALLED_WITH_INT(shmctl, 3, NULL);
+	CUE_EXPECT_CALLED_WITH_PTR(shmctl, 3, NULL);
 
 	CUE_ASSERT_EQ(int_arg, 100);
 }
@@ -130,12 +130,12 @@ SUITE_CASE("return process return") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(1000);
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
-	CUE_EXPECT_CALLED_WITH_INT(shmdt, 1, buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, buffer);
 
 	CUE_EXPECT_CALLED_ONCE(shmctl);
 	CUE_EXPECT_CALLED_WITH_INT(shmctl, 1, shmid);
 	CUE_EXPECT_CALLED_WITH_INT(shmctl, 2, IPC_RMID);
-	CUE_EXPECT_CALLED_WITH_INT(shmctl, 3, NULL);
+	CUE_EXPECT_CALLED_WITH_PTR(shmctl, 3, NULL);
 }
 
 int stub_shmget_failed(key_t k, size_t size, int flag) {
@@ -158,7 +158,7 @@ SUITE_CASE("failed to create shm") {
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
 }
 
-void *stub_shmat_failed(int shm_id, void *addr, int flag) {
+void *stub_shmat_failed(int shm_id, const void *addr, int flag) {
 	errno = 10;
 	return (void *)-1;
 }
@@ -262,7 +262,7 @@ SUITE_CASE("load with shmid") {
 	CUE_EXPECT_CALLED_WITH_INT(shmat, 3, 0);
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
-	CUE_EXPECT_CALLED_WITH_INT(shmdt, 1, buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, buffer);
 
 	CUE_ASSERT_EQ(int_arg, 100);
 }

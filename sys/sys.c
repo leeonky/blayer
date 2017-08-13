@@ -1,5 +1,7 @@
 #include "sys.h"
 
+FILE *fmemopen(void *, size_t, const char *);
+
 int fmemprocess(void *buf, size_t size, const char *mode, void *arg, int(*processer)(FILE *, void *)) {
 	int res = 0;
 	FILE *f = fmemopen(buf, size, mode);
