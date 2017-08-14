@@ -11,6 +11,7 @@ SUITE_START("sdl_open_window_test");
 static int int_arg;
 static SDL_Window *window;
 static SDL_Renderer *renderer;
+static SDL_Texture *texture;
 
 static SDL_Window *stub_SDL_CreateWindow(const char *title, int x, int y, int w, int h, Uint32 flag) {
 	return window;
@@ -20,10 +21,15 @@ static SDL_Renderer *stub_SDL_CreateRenderer(SDL_Window *w, int index, Uint32 fl
 	return renderer;
 }
 
+static SDL_Texture *stub_SDL_CreateTexture(SDL_Renderer *renderer, Uint32 format, int access, int w, int h) {
+	return texture;
+}
+
 BEFORE_EACH() {
 	int_arg = 0;
 	window = (SDL_Window *)&window;
 	renderer = (SDL_Renderer *)&renderer;
+	texture = (SDL_Texture *)&texture;
 
 	init_subject("");
 
@@ -34,6 +40,8 @@ BEFORE_EACH() {
 	init_mock_function(SDL_DestroyWindow, NULL);
 	init_mock_function(SDL_QuitSubSystem, NULL);
 	init_mock_function(SDL_ShowCursor, NULL);
+	init_mock_function(SDL_CreateTexture, stub_SDL_CreateTexture);
+	init_mock_function(SDL_DestroyTexture, NULL);
 	return 0;
 }
 
@@ -52,7 +60,7 @@ SUBJECT(int) {
 	return sdl_open_window("test", 0, 0, 800, 400, SDL_WINDOW_RESIZABLE, &int_arg, process_window, &io_s);
 }
 
-SUITE_CASE("open window with args and get window and renderer") {
+SUITE_CASE("open window with args and get window and renderer and texture") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(10);
 
 	CUE_EXPECT_CALLED_ONCE(SDL_InitSubSystem);
@@ -72,9 +80,19 @@ SUITE_CASE("open window with args and get window and renderer") {
 	CUE_EXPECT_CALLED_ONCE(SDL_CreateRenderer);
 	CUE_EXPECT_CALLED_WITH_PTR(SDL_CreateRenderer, 1, window);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 2, -1);
-	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 3, SDL_RENDERER_ACCELERATED);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 3, SDL_RENDERER_PRESENTVSYNC);
+
+	CUE_EXPECT_CALLED_ONCE(SDL_CreateTexture);
+	CUE_EXPECT_CALLED_WITH_PTR(SDL_CreateTexture, 1, renderer);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 2, SDL_PIXELFORMAT_IYUV);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 3, SDL_TEXTUREACCESS_STREAMING);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 4, 800);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 5, 400);
 
 	CUE_ASSERT_EQ(int_arg, 100);
+
+	CUE_EXPECT_CALLED_ONCE(SDL_DestroyTexture);
+	CUE_EXPECT_CALLED_WITH_PTR(SDL_DestroyTexture, 1, texture);
 
 	CUE_EXPECT_CALLED_ONCE(SDL_DestroyRenderer);
 	CUE_EXPECT_CALLED_WITH_PTR(SDL_DestroyRenderer, 1, renderer);
@@ -126,16 +144,16 @@ static SDL_Renderer *stub_SDL_CreateRenderer_error(SDL_Window *w, int index, Uin
 	return NULL;
 }
 
-SUITE_CASE("failed to create window") {
+SUITE_CASE("failed to create renderer") {
 	init_mock_function(SDL_CreateRenderer, stub_SDL_CreateRenderer_error);
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
 	CUE_ASSERT_STDERR_EQ("Error[libwrpsdl]: sdl error\n");
 
-	CUE_EXPECT_NEVER_CALLED(SDL_DestroyWindow);
+	CUE_EXPECT_NEVER_CALLED(SDL_DestroyRenderer);
 
-	CUE_EXPECT_CALLED_ONCE(SDL_DestroyRenderer);
+	CUE_EXPECT_CALLED_ONCE(SDL_DestroyWindow);
 	CUE_EXPECT_CALLED_ONCE(SDL_QuitSubSystem);
 }
 
