@@ -13,7 +13,6 @@ int sdl_open_window(const char *title, int x, int y, int w, int h, Uint32 flag, 
 		if((window.window = SDL_CreateWindow(title, x, y, w, h, flag))) {
 			SDL_ShowCursor(SDL_DISABLE);
 			if((window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_PRESENTVSYNC))) {
-			/*if((window.renderer = SDL_CreateRenderer(window.window, -1, 0))) {*/
 				window.texture = SDL_CreateTexture(window.renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, w, h);
 				if(process) {
 					res = process(&window, arg, io_s);

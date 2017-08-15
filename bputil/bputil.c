@@ -129,3 +129,13 @@ void print_stack(FILE *f) {
 	depth = backtrace(buffer, MAX_STACK_DEPTH);
 	backtrace_symbols_fd(buffer, depth, fd);
 }
+
+int shrb_init(void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	shm_cbuf cbuf = {
+		.shm_id = -1,
+	};
+	if(action)
+		res = action(&cbuf, arg, io_s);
+	return res;
+}
