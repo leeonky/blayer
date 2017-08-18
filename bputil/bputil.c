@@ -3,7 +3,11 @@
 #include <errno.h>
 #include <string.h>
 #include <execinfo.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <semaphore.h>
 #include "bputil.h"
+#include "sem.h"
 
 static void output_errno(io_stream *io_s) {
 	fprintf(io_s->stderr, "Error[shm_cbuf]: %s\n", strerror(errno));
@@ -23,48 +27,28 @@ static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
 	rb->index = 0;
 }
 
-#define SEM_NAME "/blayer-video"
-
-static int map_and_process(int isnew, shm_cbuf *rb, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
-	if ((rb->buffer = shmat(rb->shm_id, NULL, 0)) != (void *)-1) {
-		if (process) {
-#ifdef __APPLE__
-			if(isnew) {
-				sem_unlink(SEM_NAME);
-				if(SEM_FAILED != (rb->semaphore = sem_open(SEM_NAME, O_CREAT|O_EXCL, 0644, rb->element_count))) {
-					res = process(rb, arg, io_s);
-					sem_close(rb->semaphore);
-					sem_unlink(SEM_NAME);
-				} else {
-					res = -1;
-					output_errno(io_s);
+	shm_cbuf cbuf = {};
+	init_shm_cbuf(&cbuf, bits, size);
+	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count), 0666 | IPC_CREAT)) != -1) {
+		if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
+			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(cbuf.element_count))) {
+				if (process) {
+					res = process(&cbuf, arg, io_s);
 				}
+				sem_close(cbuf.semaphore);
+				sem_unlink_with_ppid();
 			} else {
-				if(SEM_FAILED != (rb->semaphore = sem_open(SEM_NAME, 0))) {
-					res = process(rb, arg, io_s);
-					sem_close(rb->semaphore);
-				} else {
-					res = -1;
-					output_errno(io_s);
-				}
+				res = -1;
+				output_errno(io_s);
 			}
-#else
-			rb->semaphore = (sem_t *)(rb->buffer + rb->element_size*rb->element_count);
-			if(isnew) {
-				if(-1 != sem_init(rb->semaphore, 1, rb->element_count)) {
-					res = process(rb, arg, io_s);
-					sem_destroy(rb->semaphore);
-				} else {
-					res = -1;
-					output_errno(io_s);
-				}
-			} else {
-				res = process(rb, arg, io_s);
-			}
-#endif
+			shmdt(cbuf.buffer);
+		} else {
+			res = -1;
+			output_errno(io_s);
 		}
-		shmdt(rb->buffer);
+		shmctl(cbuf.shm_id, IPC_RMID, NULL);
 	} else {
 		res = -1;
 		output_errno(io_s);
@@ -72,13 +56,22 @@ static int map_and_process(int isnew, shm_cbuf *rb, void *arg, int(*process)(shm
 	return res;
 }
 
-int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
-	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count) + align_to_pagesize(sizeof(sem_t)), 0666 | IPC_CREAT)) != -1) {
-		res = map_and_process(1, &cbuf, arg, process, io_s);
-		shmctl(cbuf.shm_id, IPC_RMID, NULL);
+	cbuf.shm_id = id;
+	if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
+		if(SEM_FAILED != (cbuf.semaphore = sem_load_with_ppid())) {
+			if (process) {
+				res = process(&cbuf, arg, io_s);
+			}
+			sem_close(cbuf.semaphore);
+		} else {
+			res = -1;
+			output_errno(io_s);
+		}
+		shmdt(cbuf.buffer);
 	} else {
 		res = -1;
 		output_errno(io_s);
@@ -106,13 +99,6 @@ void *shrb_allocate(shm_cbuf *rb) {
 	return get_inner(rb, rb->index);
 }
 
-int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
-	shm_cbuf cbuf = {};
-	init_shm_cbuf(&cbuf, bits, size);
-	cbuf.shm_id = id;
-	return map_and_process(0, &cbuf, arg, process, io_s);
-}
-
 const char *shrb_info(shm_cbuf *cbuf) {
 	static __thread char buffer[1024];
 	sprintf(buffer, "cbuf:%d bits:%d size:%d", cbuf->shm_id, cbuf->bits, cbuf->element_size);
@@ -130,12 +116,31 @@ void print_stack(FILE *f) {
 	backtrace_symbols_fd(buffer, depth, fd);
 }
 
+static void shrb_destroy(shm_cbuf *cb) {
+	shmdt(cb->buffer);
+	sem_close(cb->semaphore);
+}
+
 int shrb_init(void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	shm_cbuf cbuf = {
 		.shm_id = -1,
 	};
+
 	if(action)
 		res = action(&cbuf, arg, io_s);
+
+	if(-1 != cbuf.shm_id) {
+		shrb_destroy(&cbuf);
+	}
+	return res;
+}
+
+int shrb_reload(shm_cbuf *rb, int id, size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s){
+	int res = 0;
+	init_shm_cbuf(rb, bits, size);
+	rb->shm_id = id;
+	rb->buffer = shmat(rb->shm_id, NULL, 0);
+	rb->semaphore = sem_load_with_ppid();
 	return res;
 }

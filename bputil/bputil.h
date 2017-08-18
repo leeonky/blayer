@@ -40,6 +40,8 @@ int shrb_load(int, size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream 
 
 int shrb_init(void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);
 
+int shrb_reload(shm_cbuf *, int, size_t, size_t, void *, int(*)(shm_cbuf *, void *, io_stream *), io_stream *);
+
 const char *shrb_info(shm_cbuf *);
 
 void print_stack(FILE *);
