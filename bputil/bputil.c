@@ -32,18 +32,18 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
 	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count), 0666 | IPC_CREAT)) != -1) {
-		if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
-			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(cbuf.element_count))) {
+		if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(cbuf.element_count))) {
+			if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
 				if (process) {
 					res = process(&cbuf, arg, io_s);
 				}
-				sem_close(cbuf.semaphore);
-				sem_unlink_with_ppid();
+				shmdt(cbuf.buffer);
 			} else {
 				res = -1;
 				output_errno(io_s);
 			}
-			shmdt(cbuf.buffer);
+			sem_close(cbuf.semaphore);
+			sem_unlink_with_ppid();
 		} else {
 			res = -1;
 			output_errno(io_s);
@@ -61,17 +61,17 @@ int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbu
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
 	cbuf.shm_id = id;
-	if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
-		if(SEM_FAILED != (cbuf.semaphore = sem_load_with_ppid())) {
+	if(SEM_FAILED != (cbuf.semaphore = sem_load_with_ppid())) {
+		if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
 			if (process) {
 				res = process(&cbuf, arg, io_s);
 			}
-			sem_close(cbuf.semaphore);
+			shmdt(cbuf.buffer);
 		} else {
 			res = -1;
 			output_errno(io_s);
 		}
-		shmdt(cbuf.buffer);
+		sem_close(cbuf.semaphore);
 	} else {
 		res = -1;
 		output_errno(io_s);
