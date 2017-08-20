@@ -10,7 +10,7 @@ int stub_shmget(key_t k, size_t size, int flag) {
 	return ret_shmid;
 }
 
-static char ret_buffer[100];
+static char ret_buffer[4096*10];
 void *stub_shmat(int shmid, const void *addr, int flag) {
 	return ret_buffer;
 }
@@ -41,6 +41,7 @@ BEFORE_EACH() {
 	arg_arg = 0;
 
 	init_subject("");
+	memset(ret_buffer, 0, sizeof(ret_buffer));
 
 	arg_io_s.stdin = actxt.input_stream;
 	arg_io_s.stdout = actxt.output_stream;
@@ -70,15 +71,24 @@ SUBJECT(int) {
 	return shrb_new(arg_buffer_bits, arg_element_size, &arg_arg, shrb_new_action, &arg_io_s);
 }
 
+static int stub_shrb_new_action_assert(shm_cbuf *cb, void *arg, io_stream *io_s) {
+	CUE_ASSERT_PTR_EQ(cb->buffer, ret_buffer);
+	CUE_ASSERT_PTR_EQ(cb->share_args, ret_buffer+4*getpagesize());
+	CUE_ASSERT_EQ(cb->share_args->sem_id, getpid());
+	return 0;
+}
+
 SUITE_CASE("create private shm buffer for cbuf, elements size is smaller than page size") {
 	arg_buffer_bits = 2;
 	arg_element_size = getpagesize();
+
+	init_mock_function(shrb_new_action, stub_shrb_new_action_assert);
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(shmget);
 	CUE_EXPECT_CALLED_WITH_INT(shmget, 1, IPC_PRIVATE);
-	CUE_EXPECT_CALLED_WITH_INT(shmget, 2, getpagesize()*4);
+	CUE_EXPECT_CALLED_WITH_INT(shmget, 2, getpagesize()*4+getpagesize());
 	CUE_EXPECT_CALLED_WITH_INT(shmget, 3, 0666 | IPC_CREAT);
 
 	CUE_EXPECT_CALLED_ONCE(sem_new_with_ppid);
@@ -113,7 +123,7 @@ SUITE_CASE("create shm with elements size bigger than pagesize") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(shmget);
-	CUE_EXPECT_CALLED_WITH_INT(shmget, 2, getpagesize()*2*4);
+	CUE_EXPECT_CALLED_WITH_INT(shmget, 2, getpagesize()*2*4+getpagesize());
 }
 
 static int shrb_new_action_failed(shm_cbuf *rb, void *arg, io_stream *io_s) {
@@ -240,7 +250,7 @@ static sem_t *stub_sem_load_with_ppid() {
 	return &ret_sem;
 }
 
-static int arg_shmid;
+static int arg_shmid, arg_semid;
 
 mock_function_3(int, shrb_load_action, shm_cbuf *, void *, io_stream *);
 
@@ -249,6 +259,11 @@ BEFORE_EACH() {
 	arg_buffer_bits = 2;
 	arg_element_size = 100;
 	arg_arg = 0;
+
+	arg_semid = 3276;
+	memset(ret_buffer, 0, sizeof(ret_buffer));
+	shm_share_args *a = (shm_share_args *)(ret_buffer + 4*getpagesize());
+	a->sem_id = arg_semid;
 
 	init_subject("");
 
@@ -278,8 +293,17 @@ SUBJECT(int) {
 	return shrb_load(arg_shmid, arg_buffer_bits, arg_element_size, &arg_arg, shrb_load_action, &arg_io_s);
 }
 
+static int stub_shrb_load_action_assert(shm_cbuf *cb, void *arg, io_stream *io_s) {
+	CUE_ASSERT_PTR_EQ(cb->buffer, ret_buffer);
+	CUE_ASSERT_PTR_EQ(cb->share_args, ret_buffer+4*getpagesize());
+	CUE_ASSERT_EQ(cb->share_args->sem_id, arg_semid);
+	return 0;
+}
+
 SUITE_CASE("load with shmid") {
 	arg_element_size = getpagesize();
+
+	init_mock_function(shrb_load_action, stub_shrb_load_action_assert);
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 

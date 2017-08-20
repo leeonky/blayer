@@ -19,9 +19,9 @@ static sem_t *stub_sem_load_with_ppid() {
 	return &ret_sem;
 }
 
-static char buffer[100];
+static char ret_buffer[4096*10];
 static void *stub_shmat(int shmid, const void *addr, int flag) {
-	return buffer;
+	return ret_buffer;
 }
 
 mock_function_3(int, shrb_reload_action, shm_cbuf *, void *, io_stream *);
@@ -80,7 +80,7 @@ SUITE_CASE("init cbuf and no any actions") {
 
 static int shrb_init_first_load_cbuf(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	cb->shm_id = 10;
-	cb->buffer = buffer;
+	cb->buffer = ret_buffer;
 	cb->semaphore = &ret_sem;
 	return 0;
 }
@@ -94,7 +94,7 @@ SUITE_CASE("should delete buffer and sem if has buffer") {
 	CUE_EXPECT_CALLED_WITH_PTR(sem_close, 1, &ret_sem);
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
-	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, ret_buffer);
 }
 
 SUITE_END(shm_cbuf_init_test);
@@ -102,12 +102,18 @@ SUITE_END(shm_cbuf_init_test);
 SUITE_START("shm_cbuf_reload_test");
 
 static shm_cbuf arg_cbuf;
+static int arg_semid;
 
 BEFORE_EACH() {
 	arg_arg = 10;
 	arg_shm_id = 255;
 	arg_bits = 2;
 	arg_element_size = getpagesize();
+
+	arg_semid = 3276;
+	memset(ret_buffer, 0, sizeof(ret_buffer));
+	shm_share_args *a = (shm_share_args *)(ret_buffer + 4*getpagesize());
+	a->sem_id = arg_semid;
 
 	arg_cbuf.shm_id = -1;
 	arg_cbuf.bits = 0;
@@ -116,7 +122,7 @@ BEFORE_EACH() {
 
 	init_subject("");
 
-	init_mock_function(shmat, NULL);
+	init_mock_function(shmat, stub_shmat);
 	init_mock_function(shmdt, NULL);
 
 	init_mock_function(shrb_reload_action, NULL);
@@ -138,6 +144,9 @@ SUBJECT(int) {
 }
 
 static int stub_shrb_reload_action_assert(shm_cbuf *cb, void *arg, io_stream *io_s) {
+	CUE_ASSERT_PTR_EQ(cb->buffer, ret_buffer);
+	CUE_ASSERT_PTR_EQ(cb->share_args, ret_buffer+4*getpagesize());
+	CUE_ASSERT_EQ(cb->share_args->sem_id, arg_semid);
 	return 0;
 }
 
@@ -228,13 +237,13 @@ SUITE_CASE("close last cbuf if diff cbuf") {
 	arg_cbuf.shm_id = last_shm_id = arg_shm_id + 1;
 	arg_cbuf.bits = last_bits = arg_bits + 1;
 	arg_cbuf.element_size = last_size = arg_element_size + 1;
-	arg_cbuf.buffer = buffer;
+	arg_cbuf.buffer = ret_buffer;
 	arg_cbuf.semaphore = &ret_sem;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
-	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, ret_buffer);
 
 	CUE_EXPECT_CALLED_ONCE(sem_close);
 	CUE_EXPECT_CALLED_WITH_PTR(sem_close, 1, &ret_sem);

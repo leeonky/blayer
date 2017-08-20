@@ -25,14 +25,26 @@ static void init_shm_cbuf(shm_cbuf *rb, size_t bits, size_t size) {
 	rb->element_count = 1<<bits;
 	rb->mask = rb->element_count-1;
 	rb->index = 0;
+	rb->buffer_len = rb->element_size*rb->element_count;
+}
+
+static int shmat_and_assign(shm_cbuf *rb) {
+	char *p;
+	if ((p = shmat(rb->shm_id, NULL, 0)) != (void *)-1) {
+		rb->buffer = p;
+		rb->share_args = (shm_share_args *)(p + rb->buffer_len);
+		return 0;
+	}
+	return -1;
 }
 
 int shrb_new(size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
-	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.element_size*(cbuf.element_count), 0666 | IPC_CREAT)) != -1) {
-		if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
+	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.buffer_len + getpagesize(), 0666 | IPC_CREAT)) != -1) {
+		if (!shmat_and_assign(&cbuf)) {
+			cbuf.share_args->sem_id = getpid();
 			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(cbuf.element_count))) {
 				if (action) {
 					res = action(&cbuf, arg, io_s);
@@ -64,10 +76,9 @@ static inline void shrb_destroy(shm_cbuf *cb) {
 static inline int load_shm_cbuf(shm_cbuf *rb, int id, size_t bits, size_t size, io_stream *io_s) {
 	int res = 0;
 	init_shm_cbuf(rb, bits, size);
-	if((void *)-1 != (rb->buffer = shmat(id, NULL, 0))) {
-		if(SEM_FAILED!=(rb->semaphore = sem_load_with_ppid())) {
-			rb->shm_id = id;
-		} else {
+	rb->shm_id = id;
+	if (!shmat_and_assign(rb)) {
+		if(SEM_FAILED==(rb->semaphore = sem_load_with_ppid())) {
 			shmdt(rb->buffer);
 			res = -1;
 			output_errno(io_s);

@@ -15,15 +15,21 @@ typedef struct io_stream {
 	p->stdin = stdin; \
 } while(0);
 
+typedef struct {
+	int sem_id;
+} shm_share_args;
+
 typedef struct shm_cbuf {
 	int bits;
 	int element_size;
 	int shm_id;
 	sem_t *semaphore;
 	char *buffer;
+	size_t buffer_len;
 	int index;
 	int mask;
 	size_t element_count;
+	shm_share_args *share_args;
 } shm_cbuf;
 
 void *shrb_get(shm_cbuf *, int index);
