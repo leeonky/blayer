@@ -44,13 +44,14 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void 
 	init_shm_cbuf(&cbuf, bits, size);
 	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.buffer_len + getpagesize(), 0666 | IPC_CREAT)) != -1) {
 		if (!shmat_and_assign(&cbuf)) {
-			cbuf.share_args->sem_id = getpid();
-			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(cbuf.element_count))) {
+			int pid = getpid();
+			cbuf.share_args->sem_id = pid;
+			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(pid, cbuf.element_count))) {
 				if (action) {
 					res = action(&cbuf, arg, io_s);
 				}
 				sem_close(cbuf.semaphore);
-				sem_unlink_with_ppid();
+				sem_unlink_with_ppid(pid);
 			} else {
 				res = -1;
 				output_errno(io_s);
@@ -78,7 +79,7 @@ static inline int load_shm_cbuf(shm_cbuf *rb, int id, size_t bits, size_t size, 
 	init_shm_cbuf(rb, bits, size);
 	rb->shm_id = id;
 	if (!shmat_and_assign(rb)) {
-		if(SEM_FAILED==(rb->semaphore = sem_load_with_ppid())) {
+		if(SEM_FAILED==(rb->semaphore = sem_load_with_ppid(rb->share_args->sem_id))) {
 			shmdt(rb->buffer);
 			res = -1;
 			output_errno(io_s);

@@ -22,7 +22,7 @@ static char *stub_strerror(int e) {
 }
 
 static sem_t ret_sem;
-static sem_t *sem_new_with_ppid(int count) {
+static sem_t *sem_new_with_ppid(int id, unsigned int count) {
 	return &ret_sem;
 }
 
@@ -92,7 +92,8 @@ SUITE_CASE("create private shm buffer for cbuf, elements size is smaller than pa
 	CUE_EXPECT_CALLED_WITH_INT(shmget, 3, 0666 | IPC_CREAT);
 
 	CUE_EXPECT_CALLED_ONCE(sem_new_with_ppid);
-	CUE_EXPECT_CALLED_WITH_INT(sem_new_with_ppid, 1, 4);
+	CUE_EXPECT_CALLED_WITH_INT(sem_new_with_ppid, 1, getpid());
+	CUE_EXPECT_CALLED_WITH_INT(sem_new_with_ppid, 2, 4);
 
 	CUE_EXPECT_CALLED_ONCE(shmat);
 	CUE_EXPECT_CALLED_WITH_INT(shmat, 1, ret_shmid);
@@ -107,6 +108,7 @@ SUITE_CASE("create private shm buffer for cbuf, elements size is smaller than pa
 	CUE_EXPECT_CALLED_WITH_PTR(sem_close, 1, &ret_sem);
 
 	CUE_EXPECT_CALLED_ONCE(sem_unlink_with_ppid);
+	CUE_EXPECT_CALLED_WITH_INT(sem_unlink_with_ppid, 1, getpid());
 
 	CUE_EXPECT_CALLED_ONCE(shmdt);
 	CUE_EXPECT_CALLED_WITH_PTR(shmdt, 1, ret_buffer);
@@ -188,7 +190,7 @@ SUITE_CASE("failed to map shm") {
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
 }
 
-static sem_t *stub_sem_new_with_ppid_failed(unsigned int value) {
+static sem_t *stub_sem_new_with_ppid_failed(int id, unsigned int value) {
 	errno = 100;
 	return SEM_FAILED;
 }
@@ -246,7 +248,7 @@ SUITE_END(shm_cbuf_new_test);
 
 SUITE_START("shm_cbuf_load_test");
 
-static sem_t *stub_sem_load_with_ppid() {
+static sem_t *stub_sem_load_with_ppid(int id) {
 	return &ret_sem;
 }
 
@@ -308,6 +310,7 @@ SUITE_CASE("load with shmid") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(sem_load_with_ppid);
+	CUE_EXPECT_CALLED_WITH_INT(sem_load_with_ppid, 1, arg_semid);
 
 	CUE_EXPECT_CALLED_ONCE(shmat);
 	CUE_EXPECT_CALLED_WITH_INT(shmat, 1, arg_shmid);
