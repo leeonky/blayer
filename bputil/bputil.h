@@ -16,14 +16,14 @@ typedef struct io_stream {
 } while(0);
 
 typedef struct shm_cbuf {
-	int shm_id;
-	char *buffer;
-	int element_size;
-	int index;
 	int bits;
-	size_t element_count;
-	int mask;
+	int element_size;
+	int shm_id;
 	sem_t *semaphore;
+	char *buffer;
+	int index;
+	int mask;
+	size_t element_count;
 } shm_cbuf;
 
 void *shrb_get(shm_cbuf *, int index);

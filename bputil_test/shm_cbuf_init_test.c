@@ -164,28 +164,6 @@ SUITE_CASE("first load shm") {
 	CUE_ASSERT_EQ(arg_cbuf.semaphore, &ret_sem);
 }
 
-static sem_t *stub_sem_load_with_ppid_failed() {
-	errno = 100;
-	return SEM_FAILED;
-}
-
-SUITE_CASE("failed to load sem with ppid") {
-	init_mock_function(sem_load_with_ppid, stub_sem_load_with_ppid_failed);
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
-
-	CUE_EXPECT_NEVER_CALLED(shmat);
-
-	CUE_EXPECT_NEVER_CALLED(shrb_reload_action);
-
-	CUE_ASSERT_EQ(arg_cbuf.shm_id, -1);
-	CUE_ASSERT_EQ(arg_cbuf.bits, 0);
-	CUE_ASSERT_EQ(arg_cbuf.element_size, 0);
-	CUE_ASSERT_EQ(arg_cbuf.semaphore, NULL);
-}
-
 static void *stub_shmat_failed(int shm_id, const void *addr, int flag) {
 	errno = 10;
 	return (void *)-1;
@@ -198,9 +176,31 @@ SUITE_CASE("failed to shmat") {
 
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
 
+	CUE_EXPECT_NEVER_CALLED(sem_load_with_ppid);
+
 	CUE_EXPECT_NEVER_CALLED(shrb_reload_action);
 
-	CUE_EXPECT_CALLED_ONCE(sem_close);
+	CUE_EXPECT_NEVER_CALLED(sem_close);
+
+	CUE_ASSERT_EQ(arg_cbuf.shm_id, -1);
+	CUE_ASSERT_EQ(arg_cbuf.bits, 0);
+	CUE_ASSERT_EQ(arg_cbuf.element_size, 0);
+	CUE_ASSERT_EQ(arg_cbuf.semaphore, NULL);
+}
+
+static sem_t *stub_sem_load_with_ppid_failed() {
+	errno = 100;
+	return SEM_FAILED;
+}
+
+SUITE_CASE("failed to load sem with ppid") {
+	init_mock_function(sem_load_with_ppid, stub_sem_load_with_ppid_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
+
+	CUE_EXPECT_NEVER_CALLED(shrb_reload_action);
 
 	CUE_ASSERT_EQ(arg_cbuf.shm_id, -1);
 	CUE_ASSERT_EQ(arg_cbuf.bits, 0);

@@ -140,6 +140,8 @@ SUITE_CASE("failed to create shm") {
 
 	CUE_EXPECT_NEVER_CALLED(shmat);
 
+	CUE_EXPECT_NEVER_CALLED(shrb_new_action);
+
 	CUE_EXPECT_NEVER_CALLED(shmdt);
 
 	CUE_EXPECT_NEVER_CALLED(sem_close);
@@ -147,29 +149,6 @@ SUITE_CASE("failed to create shm") {
 	CUE_EXPECT_NEVER_CALLED(sem_unlink_with_ppid);
 
 	CUE_EXPECT_NEVER_CALLED(shmctl);
-
-	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
-}
-
-static sem_t *stub_sem_new_with_ppid_failed(unsigned int value) {
-	errno = 100;
-	return SEM_FAILED;
-}
-
-SUITE_CASE("failed to init semaphore") {
-	init_mock_function(sem_new_with_ppid, stub_sem_new_with_ppid_failed);
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_EXPECT_NEVER_CALLED(shmat);
-
-	CUE_EXPECT_NEVER_CALLED(shmdt);
-
-	CUE_EXPECT_NEVER_CALLED(sem_close);
-
-	CUE_EXPECT_NEVER_CALLED(sem_unlink_with_ppid);
-
-	CUE_EXPECT_CALLED_ONCE(shmctl);
 
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
 }
@@ -184,15 +163,42 @@ SUITE_CASE("failed to map shm") {
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
+	CUE_EXPECT_NEVER_CALLED(sem_new_with_ppid);
+
+	CUE_EXPECT_NEVER_CALLED(shrb_new_action);
+
 	CUE_EXPECT_NEVER_CALLED(shmdt);
 
-	CUE_EXPECT_CALLED_ONCE(sem_close);
+	CUE_EXPECT_NEVER_CALLED(sem_close);
 
-	CUE_EXPECT_CALLED_ONCE(sem_unlink_with_ppid);
+	CUE_EXPECT_NEVER_CALLED(sem_unlink_with_ppid);
 
 	CUE_EXPECT_CALLED_ONCE(shmctl);
 
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
+}
+
+static sem_t *stub_sem_new_with_ppid_failed(unsigned int value) {
+	errno = 100;
+	return SEM_FAILED;
+}
+
+SUITE_CASE("failed to init semaphore") {
+	init_mock_function(sem_new_with_ppid, stub_sem_new_with_ppid_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(shrb_new_action);
+
+	CUE_EXPECT_NEVER_CALLED(sem_close);
+
+	CUE_EXPECT_NEVER_CALLED(sem_unlink_with_ppid);
+
+	CUE_EXPECT_CALLED_ONCE(shmdt);
+
+	CUE_EXPECT_CALLED_ONCE(shmctl);
+
+	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
 }
 
 static int shrb_new_action_allocate(shm_cbuf *rb, void *arg, io_stream *io_s) {
@@ -295,6 +301,22 @@ SUITE_CASE("load with shmid") {
 	CUE_EXPECT_CALLED_WITH_PTR(sem_close, 1, &ret_sem);
 }
 
+SUITE_CASE("failed to map shm") {
+	init_mock_function(shmat, stub_shmat_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(sem_load_with_ppid);
+
+	CUE_EXPECT_NEVER_CALLED(shrb_load_action);
+
+	CUE_EXPECT_NEVER_CALLED(shmdt);
+
+	CUE_EXPECT_NEVER_CALLED(sem_close);
+
+	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
+}
+
 static sem_t *stub_sem_load_with_ppid_failed() {
 	errno = 100;
 	return SEM_FAILED;
@@ -305,29 +327,13 @@ SUITE_CASE("failed to load sem with ppid") {
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
-	CUE_EXPECT_NEVER_CALLED(shmat);
-
 	CUE_EXPECT_NEVER_CALLED(shrb_load_action);
-
-	CUE_EXPECT_NEVER_CALLED(shmdt);
 
 	CUE_EXPECT_NEVER_CALLED(sem_close);
 
+	CUE_EXPECT_CALLED_ONCE(shmdt);
+
 	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 100\n");
-}
-
-SUITE_CASE("failed to map shm") {
-	init_mock_function(shmat, stub_shmat_failed);
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_EXPECT_NEVER_CALLED(shrb_load_action);
-
-	CUE_EXPECT_NEVER_CALLED(shmdt);
-
-	CUE_EXPECT_CALLED_ONCE(sem_close);
-
-	CUE_ASSERT_STDERR_EQ("Error[shm_cbuf]: 10\n");
 }
 
 int shrb_load_action_failed(shm_cbuf *cb, void *arg, io_stream *io_s) {
