@@ -56,25 +56,36 @@ int shrb_new(size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void
 	return res;
 }
 
-int shrb_load(int id, size_t bits, size_t size, void *arg, int(*process)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+static inline void shrb_destroy(shm_cbuf *cb) {
+	shmdt(cb->buffer);
+	sem_close(cb->semaphore);
+}
+
+static inline int load_shm_cbuf(shm_cbuf *rb, int id, size_t bits, size_t size, io_stream *io_s) {
 	int res = 0;
-	shm_cbuf cbuf = {};
-	init_shm_cbuf(&cbuf, bits, size);
-	cbuf.shm_id = id;
-	if(SEM_FAILED != (cbuf.semaphore = sem_load_with_ppid())) {
-		if ((cbuf.buffer = shmat(cbuf.shm_id, NULL, 0)) != (void *)-1) {
-			if (process) {
-				res = process(&cbuf, arg, io_s);
-			}
-			shmdt(cbuf.buffer);
+	init_shm_cbuf(rb, bits, size);
+	if(SEM_FAILED!=(rb->semaphore = sem_load_with_ppid())) {
+		if((void *)-1 != (rb->buffer = shmat(id, NULL, 0))) {
+			rb->shm_id = id;
 		} else {
+			sem_close(rb->semaphore);
 			res = -1;
 			output_errno(io_s);
 		}
-		sem_close(cbuf.semaphore);
 	} else {
 		res = -1;
 		output_errno(io_s);
+	}
+	return res;
+}
+
+int shrb_load(int id, size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	shm_cbuf cbuf = {};
+	if(!(res = load_shm_cbuf(&cbuf, id, bits, size, io_s))) {
+		if(action)
+			res = action(&cbuf, arg, io_s);
+		shrb_destroy(&cbuf);
 	}
 	return res;
 }
@@ -105,22 +116,6 @@ const char *shrb_info(shm_cbuf *cbuf) {
 	return buffer;
 }
 
-#define MAX_STACK_DEPTH	100
-
-void print_stack(FILE *f) {
-	int fd = fileno(f);
-	void *buffer[MAX_STACK_DEPTH];
-	int depth;
-
-	depth = backtrace(buffer, MAX_STACK_DEPTH);
-	backtrace_symbols_fd(buffer, depth, fd);
-}
-
-static void shrb_destroy(shm_cbuf *cb) {
-	shmdt(cb->buffer);
-	sem_close(cb->semaphore);
-}
-
 int shrb_init(void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	shm_cbuf cbuf = {
@@ -136,11 +131,36 @@ int shrb_init(void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_strea
 	return res;
 }
 
-int shrb_reload(shm_cbuf *rb, int id, size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s){
+static inline int is_same(shm_cbuf *rb ,int id, size_t bits, size_t size) {
+	return rb->shm_id == id && rb->bits == bits && rb->element_size == size;
+}
+
+int shrb_reload(shm_cbuf *rb, int id, size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
-	init_shm_cbuf(rb, bits, size);
-	rb->shm_id = id;
-	rb->buffer = shmat(rb->shm_id, NULL, 0);
-	rb->semaphore = sem_load_with_ppid();
+	shm_cbuf cbuf = {};
+	if(is_same(rb, id, bits, size)) {
+		if(action)
+			res = action(rb, arg, io_s);
+	} else {
+		if(-1 != rb->shm_id) {
+			shrb_destroy(rb);
+		}
+		if(!(res = load_shm_cbuf(&cbuf, id, bits, size, io_s))) {
+			*rb = cbuf;
+			if(action)
+				res = action(rb, arg, io_s);
+		}
+	}
 	return res;
+}
+
+#define MAX_STACK_DEPTH	100
+
+void print_stack(FILE *f) {
+	int fd = fileno(f);
+	void *buffer[MAX_STACK_DEPTH];
+	int depth;
+
+	depth = backtrace(buffer, MAX_STACK_DEPTH);
+	backtrace_symbols_fd(buffer, depth, fd);
 }
