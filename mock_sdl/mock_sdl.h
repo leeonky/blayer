@@ -18,4 +18,6 @@ extern_mock_function_1(int, SDL_ShowCursor, int);
 extern_mock_function_5(SDL_Texture *, SDL_CreateTexture, SDL_Renderer *, Uint32, int, int, int);
 extern_mock_void_function_1(SDL_DestroyTexture, SDL_Texture *);
 
+extern_mock_void_function_3(SDL_GL_GetDrawableSize, SDL_Window *, int *, int *);
+
 #endif

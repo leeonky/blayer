@@ -25,11 +25,19 @@ static SDL_Texture *stub_SDL_CreateTexture(SDL_Renderer *renderer, Uint32 format
 	return texture;
 }
 
+static int arg_texture_w, arg_texture_h;
+static void stub_SDL_GL_GetDrawableSize(SDL_Window *window, int *w, int *h) {
+	*w = arg_texture_w;
+	*h = arg_texture_h;
+}
+
 BEFORE_EACH() {
 	int_arg = 0;
 	window = (SDL_Window *)&window;
 	renderer = (SDL_Renderer *)&renderer;
 	texture = (SDL_Texture *)&texture;
+	arg_texture_w = 400;
+	arg_texture_h = 300;
 
 	init_subject("");
 
@@ -42,6 +50,7 @@ BEFORE_EACH() {
 	init_mock_function(SDL_ShowCursor, NULL);
 	init_mock_function(SDL_CreateTexture, stub_SDL_CreateTexture);
 	init_mock_function(SDL_DestroyTexture, NULL);
+	init_mock_function(SDL_GL_GetDrawableSize, stub_SDL_GL_GetDrawableSize);
 	return 0;
 }
 
@@ -80,14 +89,14 @@ SUITE_CASE("open window with args and get window and renderer and texture") {
 	CUE_EXPECT_CALLED_ONCE(SDL_CreateRenderer);
 	CUE_EXPECT_CALLED_WITH_PTR(SDL_CreateRenderer, 1, window);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 2, -1);
-	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 3, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateRenderer, 3, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_ALLOW_HIGHDPI);
 
 	CUE_EXPECT_CALLED_ONCE(SDL_CreateTexture);
 	CUE_EXPECT_CALLED_WITH_PTR(SDL_CreateTexture, 1, renderer);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 2, SDL_PIXELFORMAT_IYUV);
 	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 3, SDL_TEXTUREACCESS_STREAMING);
-	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 4, 800);
-	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 5, 400);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 4, arg_texture_w);
+	CUE_EXPECT_CALLED_WITH_INT(SDL_CreateTexture, 5, arg_texture_h);
 
 	CUE_ASSERT_EQ(int_arg, 100);
 

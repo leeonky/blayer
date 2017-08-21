@@ -14,6 +14,7 @@ mock_void_function_1(SDL_DestroyTexture, SDL_Texture *);
 
 
 mock_function_1(int, SDL_ShowCursor, int);
+mock_void_function_3(SDL_GL_GetDrawableSize, SDL_Window *, int *, int *);
 
 const char *SDL_GetError() {
 	return "sdl error";
