@@ -82,14 +82,8 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
 				if((decoder.frame = av_frame_alloc())) {
-					if((decoder.tmp_frame = av_frame_alloc())) {
-						if (process) {
-							res = process(stream, &decoder, arg, io_s);
-						}
-						av_frame_free(&decoder.tmp_frame);
-					} else {
-						res = -1;
-						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
+					if (process) {
+						res = process(stream, &decoder, arg, io_s);
 					}
 					av_frame_free(&decoder.frame);
 				} else {

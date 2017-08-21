@@ -4,7 +4,7 @@
 #include "mock_ffmpeg/mock_ffmpeg.h"
 #include "wrpffp/wrpffp.h"
 
-SUITE_START("ffmpeg_frame_test");
+SUITE_START("ffmpeg_frame_copy_test");
 
 static ffmpeg_frame frame;
 static ffmpeg_decoder decoder;
@@ -17,7 +17,6 @@ BEFORE_EACH() {
 	frame.decoder = &decoder;
 	decoder.codec_context = &codec_context;
 	decoder.frame = &avframe;
-	decoder.tmp_frame = &tmp_avframe;
 
 	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
 	avframe.width = 1080;
@@ -66,4 +65,4 @@ SUITE_CASE("failed to copy") {
 	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -10\n");
 }
 
-SUITE_END(ffmpeg_frame_test);
+SUITE_END(ffmpeg_frame_copy_test);

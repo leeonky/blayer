@@ -17,7 +17,6 @@ typedef struct ffmpeg_stream {
 typedef struct ffmpeg_decoder {
 	AVCodecContext *codec_context;
 	AVFrame *frame;
-	AVFrame *tmp_frame;
 	ffmpeg_stream *stream;
 	int64_t _pts;
 	int64_t _duration;
