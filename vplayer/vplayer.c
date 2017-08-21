@@ -25,11 +25,11 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 
 		SDL_Rect rect = {0, 0, vfs->width, vfs->height};
 
-		SDL_UpdateYUVTexture(sdlTexture, &rect,  
+		SDL_UpdateYUVTexture(sdlTexture, NULL,  
 				dst_data[0], dst_linesize[0],  
 				dst_data[1], dst_linesize[1],  
 				dst_data[2], dst_linesize[2]); 
-		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, &rect);    
+		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, NULL);    
 		SDL_RenderPresent(wnd->renderer);
 		shrb_free(cb);
 		/*clock_t end = clock();*/

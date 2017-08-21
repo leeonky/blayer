@@ -12,7 +12,7 @@ int sdl_open_window(const char *title, int x, int y, int w, int h, Uint32 flag, 
 	if(!SDL_InitSubSystem(SDL_INIT_VIDEO)) {
 		if((window.window = SDL_CreateWindow(title, x, y, w, h, flag))) {
 			SDL_ShowCursor(SDL_DISABLE);
-			if((window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_WINDOW_ALLOW_HIGHDPI))
+			if((window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC))
 				||(window.renderer = SDL_CreateRenderer(window.window, -1, SDL_RENDERER_SOFTWARE))) {
 				int tw, th;
 				SDL_GL_GetDrawableSize(window.window, &tw, &th);
