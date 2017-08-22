@@ -1,6 +1,8 @@
 #ifndef WRPFFP_H
 #define WRPFFP_H
 
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 #include <stdio.h>
 #include "iob/iob.h"
 #include "iob/vfs.h"
@@ -54,7 +56,7 @@ extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, size_t, int, io_stream
 
 extern int ffmpeg_create_frame(void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
 
-extern int ffmpeg_load_image(ffmpeg_frame *, video_frames *, void *, io_stream *);
+extern int ffmpeg_load_image(ffmpeg_frame *, const video_frames *, void *, io_stream *);
 
 #endif
 

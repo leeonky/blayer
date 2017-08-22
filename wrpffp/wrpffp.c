@@ -1,6 +1,3 @@
-#include <libavformat/avformat.h>
-#include <libavutil/imgutils.h>
-
 #include "wrpffp.h"
 
 static int print_error(int no, FILE *stderr) {
@@ -208,12 +205,12 @@ int ffmpeg_create_frame(void *arg, int (*action)(ffmpeg_frame *, void *, io_stre
 	return res;
 }
 
-int ffmpeg_load_image(ffmpeg_frame *frame, video_frames *vfs, void *data, io_stream *io_s) {
-	int res = 0;
+int ffmpeg_load_image(ffmpeg_frame *frame, const video_frames *vfs, void *data, io_stream *io_s) {
+	int res = 0, ret;
 	AVFrame *f = frame->frame;
 	frame->codec_type = AVMEDIA_TYPE_VIDEO;
-	if((res=av_image_fill_arrays(f->data, f->linesize, data, vfs->format, vfs->width, vfs->height, vfs->align))<0) {
-		res = print_error(res, io_s->stderr);
+	if((ret=av_image_fill_arrays(f->data, f->linesize, (const uint8_t *)data, vfs->format, vfs->width, vfs->height, vfs->align))<0) {
+		res = print_error(ret, io_s->stderr);
 	}
 	return res;
 }

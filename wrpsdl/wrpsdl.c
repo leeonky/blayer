@@ -39,7 +39,7 @@ int sdl_open_window(const char *title, int x, int y, int w, int h, Uint32 flag, 
 	return res;
 }
 
-int sdl_present(sdl_window *window, video_frames *vfs, uint8_t **datas, int *lines, io_stream *io_s) {
+int sdl_present(sdl_window *window, const video_frames *vfs, uint8_t **datas, int *lines, io_stream *io_s) {
 	int res = 0;
 	if(!SDL_UpdateYUVTexture(window->texture, NULL, datas[0], lines[0], datas[1], lines[1], datas[2], lines[2]) && 
 			!SDL_RenderCopy(window->renderer, window->texture,  NULL, NULL))

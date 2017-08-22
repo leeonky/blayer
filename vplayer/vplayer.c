@@ -3,72 +3,78 @@
 #include <time.h>
 #include "bputil/bputil.h"
 #include "wrpsdl/wrpsdl.h"
+#include "wrpffp/wrpffp.h"
 #include "iob/iob.h"
 #include "iob/vfs.h"
 #include "vplayer.h"
 #include "SDL2/SDL.h"
 
-sdl_window *wnd;
-SDL_Texture * sdlTexture;
+typedef struct app_context {
+	sdl_window *window;
+	ffmpeg_frame *frame;
+	shm_cbuf *cbuf;
+	const video_frames *frames;
+} app_context;
 
-/*int av_image_fill_arrays(uint8_t *dst_data[4], int dst_linesize[4], const uint8_t *src, enum AVPixelFormat pix_fmt, int width, int height, int align);	*/
 
 static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
-	video_frames *vfs = (video_frames *)arg;
-	uint8_t *dst_data[4];
-	int dst_linesize[4];
+	app_context *context_arg = (app_context *)arg;
+	const video_frames *vfs = context_arg->frames;
+	ffmpeg_frame *frame = context_arg->frame;
 	int i;
 
 	for(i=0; i<vfs->count; ++i) {
 		/*clock_t begin = clock();*/
-		av_image_fill_arrays(dst_data, dst_linesize, (const uint8_t *)shrb_get(cb, vfs->frames[i].index), vfs->format, vfs->width, vfs->height, vfs->align);
-
-		SDL_Rect rect = {0, 0, vfs->width, vfs->height};
-
-		SDL_UpdateYUVTexture(sdlTexture, NULL,  
-				dst_data[0], dst_linesize[0],  
-				dst_data[1], dst_linesize[1],  
-				dst_data[2], dst_linesize[2]); 
-		SDL_RenderCopy(wnd->renderer, sdlTexture,  NULL, NULL);    
-		SDL_RenderPresent(wnd->renderer);
+		if(!ffmpeg_load_image(frame, vfs, shrb_get(cb, vfs->frames[i].index), io_s)) {
+			sdl_present(context_arg->window, vfs, frame->frame->data, frame->frame->linesize, io_s);
+			/*clock_t end = clock();*/
+			/*double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;*/
+			/*printf("%f\n", time_spent);*/
+			usleep(33000);
+		}
 		shrb_free(cb);
-		/*clock_t end = clock();*/
-		/*double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;*/
-		/*printf("%f\n", time_spent);*/
-		usleep(33000);
 	}
 	return 0;
 }
 
-static void process_frames(const video_frames *vfs, void *arg, io_stream *io_s) {
-	shrb_load(vfs->cbuf_id, vfs->cbuf_bits, vfs->cbuf_size, (void *)vfs, process_frame, io_s);
+static void video_frames_action(const video_frames *vfs, void *arg, io_stream *io_s) {
+	app_context *context_arg = (app_context *)arg;
+	context_arg->frames = vfs;
+	shrb_reload(context_arg->cbuf, vfs->cbuf_id, vfs->cbuf_bits, vfs->cbuf_size, arg, process_frame, io_s);
 }
 
 static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 	iob_video_frames_handler handler = {
 		.arg = arg,
-		.action = process_frames,
+		.action = video_frames_action,
 	};
 
 	iob_add_video_frames_handler(iob, &handler);
 	return 0;
 }
 
-static int process_video(sdl_window *window, void *arg, io_stream *io_s) {
-	char *line = NULL;
-	size_t len = 0;
-	ssize_t read;
-	wnd = window;
+static int cbuf_inited(shm_cbuf *cb, void *arg, io_stream *io_s) {
+	app_context *context_arg = (app_context *)arg;
+	context_arg->cbuf = cb;
+	return iob_main(arg, setup_frames_event, io_s);
+}
 
-	sdlTexture = SDL_CreateTexture(window->renderer, SDL_PIXELFORMAT_IYUV, SDL_TEXTUREACCESS_STREAMING, 1920, 1080);
-	iob_main(NULL, setup_frames_event, io_s);
-	return 0;
+static int ffmpeg_frame_created(ffmpeg_frame *frame, void *arg, io_stream *io_s) {
+	app_context *context_arg = (app_context *)arg;
+	context_arg->frame = frame;
+	return shrb_init(arg, cbuf_inited, io_s);
+}
+
+static int video_action(sdl_window *window, void *arg, io_stream *io_s) {
+	app_context *context_arg = (app_context *)arg;
+	context_arg->window = window;
+	return ffmpeg_create_frame(arg, ffmpeg_frame_created, io_s);
 }
 
 int vplayer_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
-	const char *input = argv[1];
+	app_context context_arg = {};
 	io_stream io_s = {stdin, stdout, stderr};
-	sdl_open_window("test", 0, 0, 1920, 1080, 0, NULL, process_video, &io_s);
-	return 0;
+
+	return sdl_open_window("test", 0, 0, 1920, 1080, 0, &context_arg, video_action, &io_s);
 }
 
