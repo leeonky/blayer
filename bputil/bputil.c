@@ -1,4 +1,5 @@
 #include <sys/shm.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -6,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <semaphore.h>
+#include <signal.h>
 #include "bputil.h"
 #include "sem.h"
 
@@ -38,15 +40,36 @@ static int shmat_and_assign(shm_cbuf *rb) {
 	return -1;
 }
 
+static int last_shm_id = -1, last_sem_id = -1;
+
+static void clean_last_cbuf(int s) {
+	if(-1 != last_shm_id)
+		shmctl(last_shm_id, IPC_RMID, NULL);
+	if(-1 != last_sem_id)
+		sem_unlink_with_ppid(last_sem_id);
+	fprintf(stderr, "abort(%d)\n", s);
+	exit(-1);
+}
+
+static void register_cbuf_clean() {
+	signal(SIGINT, clean_last_cbuf);
+	signal(SIGHUP, clean_last_cbuf);
+	signal(SIGKILL, clean_last_cbuf);
+	signal(SIGPIPE, clean_last_cbuf);
+	signal(SIGTERM, clean_last_cbuf);
+}
+
 int shrb_new(size_t bits, size_t size, void *arg, int(*action)(shm_cbuf *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	shm_cbuf cbuf = {};
 	init_shm_cbuf(&cbuf, bits, size);
 	if ((cbuf.shm_id = shmget(IPC_PRIVATE, cbuf.buffer_len + getpagesize(), 0666 | IPC_CREAT)) != -1) {
+		last_shm_id = cbuf.shm_id;
 		if (!shmat_and_assign(&cbuf)) {
 			int pid = getpid();
-			cbuf.share_args->sem_id = pid;
+			last_sem_id = cbuf.share_args->sem_id = pid;
 			if(SEM_FAILED != (cbuf.semaphore = sem_new_with_ppid(pid, cbuf.element_count))) {
+				register_cbuf_clean();
 				if (action) {
 					res = action(&cbuf, arg, io_s);
 				}
