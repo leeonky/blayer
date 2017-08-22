@@ -2,6 +2,8 @@
 #define WRPFFP_H
 
 #include <stdio.h>
+#include "iob/iob.h"
+#include "iob/vfs.h"
 #include "bputil/bputil.h"
 
 typedef struct ffmpeg {
@@ -49,6 +51,10 @@ int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *);
 extern const char *ffmpeg_video_info(ffmpeg_decoder *);
 
 extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, size_t, int, io_stream *);
+
+extern int ffmpeg_create_frame(void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
+
+extern int ffmpeg_load_image(ffmpeg_frame *, video_frames *, void *, io_stream *);
 
 #endif
 

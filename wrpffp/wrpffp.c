@@ -191,3 +191,29 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io
 	}
 	return res;
 }
+
+int ffmpeg_create_frame(void *arg, int (*action)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	ffmpeg_frame frame;
+	if((frame.frame = av_frame_alloc())) {
+		if (action) {
+			res = action(&frame, arg, io_s);
+		}
+		av_frame_free(&frame.frame);
+	} else {
+		res = -1;
+		fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
+		print_stack(io_s->stderr);
+	}
+	return res;
+}
+
+int ffmpeg_load_image(ffmpeg_frame *frame, video_frames *vfs, void *data, io_stream *io_s) {
+	int res = 0;
+	AVFrame *f = frame->frame;
+	frame->codec_type = AVMEDIA_TYPE_VIDEO;
+	if((res=av_image_fill_arrays(f->data, f->linesize, data, vfs->format, vfs->width, vfs->height, vfs->align))<0) {
+		res = print_error(res, io_s->stderr);
+	}
+	return res;
+}

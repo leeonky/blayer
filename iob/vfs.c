@@ -55,7 +55,7 @@ int iob_add_video_frames_handler(io_bus *iob, const iob_video_frames_handler *ha
 	return iob_add_handler(iob, &ioh);
 }
 
-void output_append_frame(const frame *frm, FILE *out) {
+void output_append_frame(const video_frame_index *frm, FILE *out) {
 	fprintf(out, ",%d=>%lld", frm->index, frm->pts);
 }
 
