@@ -222,6 +222,8 @@ AFTER_EACH() {
 
 static int process_frame(ffmpeg_decoder *d, ffmpeg_frame *f, void *arg, io_stream *io_s) {
 	*(int *)arg = 100;
+	CUE_ASSERT_PTR_EQ(f->frame, d->frame);
+	CUE_ASSERT_EQ(f->codec_type, AVMEDIA_TYPE_VIDEO);
 	return 0;
 }
 

@@ -14,11 +14,8 @@ static AVFrame avframe, tmp_avframe;
 static char frame_buffer[100];
 
 BEFORE_EACH() {
-	frame.decoder = &decoder;
-	decoder.codec_context = &codec_context;
-	decoder.frame = &avframe;
-
-	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
+	frame.frame = &avframe;
+	frame.codec_type = AVMEDIA_TYPE_VIDEO;
 	avframe.width = 1080;
 	avframe.height = 640;
 	avframe.format = AV_PIX_FMT_NV12;

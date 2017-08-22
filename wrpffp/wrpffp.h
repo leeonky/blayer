@@ -24,6 +24,8 @@ typedef struct ffmpeg_decoder {
 
 typedef struct ffmpeg_frame {
 	ffmpeg_decoder *decoder;
+	AVFrame *frame;
+	enum AVMediaType codec_type;
 } ffmpeg_frame;
 
 extern int ffmpeg_open(const char *, void *, int(*)(ffmpeg *, void *, io_stream *), io_stream *);

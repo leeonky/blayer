@@ -135,9 +135,13 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 
 int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
-	ffmpeg_frame fffrm = {decoder};
+	ffmpeg_frame fffrm = {
+		.decoder = decoder,
+		.frame = decoder->frame,
+		.codec_type = decoder->codec_context->codec_type,
+	};
 	AVCodecContext *codec_context = decoder->codec_context;
-	if(!(res=avcodec_receive_frame(codec_context, decoder->frame))) {
+	if(!(res=avcodec_receive_frame(codec_context, fffrm.frame))) {
 		process(decoder, &fffrm, arg, io_s);
 	}
 	return res;
@@ -177,9 +181,8 @@ extern const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
 
 int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io_stream *io_s) {
 	int res = 0, ret;
-	AVFrame *avframe = frame->decoder->frame;
-	AVCodecContext *codec_context = frame->decoder->codec_context;
-	if (AVMEDIA_TYPE_VIDEO == codec_context->codec_type) {
+	AVFrame *avframe = frame->frame;
+	if (AVMEDIA_TYPE_VIDEO == frame->codec_type) {
 		if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
 			res = print_error(ret, io_s->stderr);
 	} else {
