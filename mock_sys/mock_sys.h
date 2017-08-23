@@ -20,5 +20,7 @@ extern_mock_function_2(sem_t *, sem_new_with_ppid, int, int);
 extern_mock_function_1(sem_t *, sem_load_with_ppid, int);
 extern_mock_function_1(int, sem_close, sem_t *);
 extern_mock_function_1(int, sem_unlink_with_ppid, int);
+extern_mock_function_0(int64_t, usectime);
+extern_mock_function_1(int, usleep, useconds_t);
 
 #endif

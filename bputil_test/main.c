@@ -10,6 +10,7 @@ int main() {
 	ADD_SUITE(shm_cbuf_load_test);
 	ADD_SUITE(shm_cbuf_init_test);
 	ADD_SUITE(shm_cbuf_reload_test);
+	ADD_SUITE(mclock_test);
 
 	return run_test();
 }

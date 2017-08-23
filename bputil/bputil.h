@@ -52,4 +52,12 @@ const char *shrb_info(shm_cbuf *);
 
 void print_stack(FILE *);
 
+typedef struct mclock {
+	int64_t base, base_offset;
+} mclock;
+
+void mclk_init(mclock *);
+
+int mclk_waiting(const mclock *, int64_t, int64_t);
+
 #endif

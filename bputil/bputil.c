@@ -10,6 +10,7 @@
 #include <signal.h>
 #include "bputil.h"
 #include "sem.h"
+#include "usectime.h"
 
 static void output_errno(io_stream *io_s) {
 	fprintf(io_s->stderr, "Error[shm_cbuf]: %s\n", strerror(errno));
@@ -198,4 +199,19 @@ void print_stack(FILE *f) {
 
 	depth = backtrace(buffer, MAX_STACK_DEPTH);
 	backtrace_symbols_fd(buffer, depth, fd);
+}
+
+void mclk_init(mclock *mclk) {
+	mclk->base_offset = 0;
+	mclk->base = usectime();
+}
+
+int mclk_waiting(const mclock *mclk, int64_t target, int64_t period) {
+	int64_t sl = target - mclk->base_offset - (usectime() - mclk->base);
+	if(sl>=0 && sl<=period) {
+		if(sl)
+			usleep(sl);
+		return 0;
+	}
+	return -1;
 }
