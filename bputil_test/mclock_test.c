@@ -49,7 +49,7 @@ SUITE_CASE("do not wait when time is synced") {
 	CUE_EXPECT_NEVER_CALLED(usleep);
 }
 
-SUITE_CASE("failed if time passed") {
+SUITE_CASE("failed and do not wait if time passed") {
 	mclock mclk = {3000, 20};
 	arg_usec = 3041;
 
@@ -58,13 +58,14 @@ SUITE_CASE("failed if time passed") {
 	CUE_EXPECT_NEVER_CALLED(usleep);
 }
 
-SUITE_CASE("failed if too long time to wait") {
+SUITE_CASE("if too long time to wait, just wait period") {
 	mclock mclk = {3000, 20};
 	arg_usec = 3000;
 
-	CUE_ASSERT_EQ(mclk_waiting(&mclk, 60, 39), -1);
+	CUE_ASSERT_EQ(mclk_waiting(&mclk, 60, 39), 0);
 
-	CUE_EXPECT_NEVER_CALLED(usleep);
+	CUE_EXPECT_CALLED_ONCE(usleep);
+	CUE_EXPECT_CALLED_WITH_INT(usleep, 1, 39);
 }
 
 SUITE_END(mclock_test)
