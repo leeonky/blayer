@@ -18,6 +18,7 @@ static char frame_buffer[100];
 BEFORE_EACH() {
 	arg_fframe.frame = &avframe;
 	arg_fframe.codec_type = AVMEDIA_TYPE_VIDEO;
+	arg_fframe.align = 10;
 	avframe.width = 1080;
 	avframe.height = 640;
 	avframe.format = AV_PIX_FMT_NV12;
@@ -35,7 +36,7 @@ AFTER_EACH() {
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_frame_copy(&arg_fframe, frame_buffer, sizeof(frame_buffer), 10, &io_s);
+	return ffmpeg_frame_copy(&arg_fframe, frame_buffer, sizeof(frame_buffer), &io_s);
 }
 
 SUITE_CASE("ffmpeg_frame_copy") {
@@ -179,6 +180,7 @@ SUITE_CASE("load image") {
 	CUE_EXPECT_CALLED_WITH_INT(av_image_fill_arrays, 7, arg_vfs.align);
 
 	CUE_ASSERT_EQ(arg_fframe.codec_type, AVMEDIA_TYPE_VIDEO);
+	CUE_ASSERT_EQ(arg_fframe.align, 4);
 }
 
 static int stub_av_image_fill_arrays_error(uint8_t **b, int *s, const uint8_t *d, enum AVPixelFormat f, int w, int h, int a) {

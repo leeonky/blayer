@@ -193,12 +193,14 @@ SUITE_END(ffmpeg_decoder_test);
 SUITE_START("ffmpeg_decode_test");
 
 static ffmpeg_decoder decoder;
+static int arg_align;
 
 static int stub_avcodec_receive_frame_got_frame(AVCodecContext *codec_context, AVFrame *frame) {
 	return 0;
 }
 
 BEFORE_EACH() {
+	arg_align = 32;
 	decoder.codec_context = &codec_context;
 	decoder.frame = &frame;
 
@@ -224,12 +226,13 @@ static int process_frame(ffmpeg_decoder *d, ffmpeg_frame *f, void *arg, io_strea
 	*(int *)arg = 100;
 	CUE_ASSERT_PTR_EQ(f->frame, d->frame);
 	CUE_ASSERT_EQ(f->codec_type, AVMEDIA_TYPE_VIDEO);
+	CUE_ASSERT_EQ(f->align, arg_align);
 	return 0;
 }
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_decode(&decoder, &int_arg, process_frame, &io_s);
+	return ffmpeg_decode(&decoder, arg_align, &int_arg, process_frame, &io_s);
 }
 
 SUITE_CASE("decode to frame and invoke process") {

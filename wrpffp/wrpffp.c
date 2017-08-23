@@ -111,10 +111,10 @@ int ffmpeg_read(ffmpeg_stream *stream) {
 	return res;
 }
 
-int ffmpeg_frame_size(ffmpeg_stream *stream) {
+int ffmpeg_frame_size(ffmpeg_stream *stream, int align) {
 	AVCodecParameters *codecpar = stream->stream->codecpar;
 	if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
-		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
+		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, align);
 	else {
 		fputs ("ffmpeg_frame_size not support audio yet\n", stderr);
 		abort();
@@ -130,12 +130,13 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
-int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {
 		.decoder = decoder,
 		.frame = decoder->frame,
 		.codec_type = decoder->codec_context->codec_type,
+		.align = align,
 	};
 	AVCodecContext *codec_context = decoder->codec_context;
 	if(!(res=avcodec_receive_frame(codec_context, fffrm.frame))) {
@@ -176,11 +177,11 @@ const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
 	return buffer;
 }
 
-int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io_stream *io_s) {
+int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, io_stream *io_s) {
 	int res = 0, ret;
 	AVFrame *avframe = frame->frame;
 	if (AVMEDIA_TYPE_VIDEO == frame->codec_type) {
-		if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, align)) < 0 )
+		if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, frame->align)) < 0 )
 			res = print_error(ret, io_s->stderr);
 	} else {
 		fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);
@@ -191,7 +192,7 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, int align, io
 
 int ffmpeg_create_frame(void *arg, int (*action)(ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
-	ffmpeg_frame frame;
+	ffmpeg_frame frame = {};
 	if((frame.frame = av_frame_alloc())) {
 		if (action) {
 			res = action(&frame, arg, io_s);
@@ -209,6 +210,7 @@ int ffmpeg_load_image(ffmpeg_frame *frame, const video_frames *vfs, void *data, 
 	int res = 0, ret;
 	AVFrame *f = frame->frame;
 	frame->codec_type = AVMEDIA_TYPE_VIDEO;
+	frame->align = vfs->align;
 	if((ret=av_image_fill_arrays(f->data, f->linesize, (const uint8_t *)data, vfs->format, vfs->width, vfs->height, vfs->align))<0) {
 		res = print_error(ret, io_s->stderr);
 	}

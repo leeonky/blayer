@@ -220,10 +220,13 @@ SUITE_END(ffmpeg_read_and_feed_test);
 
 SUITE_START("ffmpeg_frame_size_test");
 
+static int arg_align;
+
 BEFORE_EACH() {
 	init_subject("");
 
 	ffst.stream = &streams[0];
+	arg_align = 8;
 	streams[0].codecpar = &codec_parameters[0];
 	return 0;
 }
@@ -245,13 +248,13 @@ SUITE_CASE("get frame buffer size for video") {
 
 	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
 
-	CUE_ASSERT_EQ(ffmpeg_frame_size(&ffst), 100);
+	CUE_ASSERT_EQ(ffmpeg_frame_size(&ffst, arg_align), 100);
 
 	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, 1);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, arg_align);
 }
 
 SUITE_END(ffmpeg_frame_size_test);
