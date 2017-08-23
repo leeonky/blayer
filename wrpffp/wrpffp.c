@@ -116,7 +116,7 @@ int ffmpeg_frame_size(ffmpeg_stream *stream) {
 	if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
 		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, 1);
 	else {
-		fputs ("ffmpeg_frame_size not support audio yet\n",stderr);
+		fputs ("ffmpeg_frame_size not support audio yet\n", stderr);
 		abort();
 	}
 }
@@ -165,7 +165,7 @@ int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 	}
 }
 
-extern const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
+const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
 	static __thread char buffer[1024];
 	AVCodecContext *codec_context = decoder->codec_context;
 	sprintf(buffer, "w:%d h:%d fmt:%d",

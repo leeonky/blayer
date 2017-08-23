@@ -16,6 +16,7 @@ typedef struct app_context {
 	const video_frames *frames;
 } app_context;
 
+static mclock mclk;
 
 static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
@@ -24,13 +25,11 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	int i;
 
 	for(i=0; i<vfs->count; ++i) {
-		/*clock_t begin = clock();*/
 		if(!ffmpeg_load_image(frame, vfs, shrb_get(cb, vfs->frames[i].index), io_s)) {
-			sdl_present(context_arg->window, vfs, frame->frame->data, frame->frame->linesize, io_s);
-			/*clock_t end = clock();*/
-			/*double time_spent = (double)(end - begin) / CLOCKS_PER_SEC * 1000;*/
-			/*printf("%f\n", time_spent);*/
-			usleep(33000);
+			if(!mclk_waiting(&mclk, vfs->frames[i].pts, 300000))
+				sdl_present(context_arg->window, vfs, frame->frame->data, frame->frame->linesize, io_s);
+			else
+				fprintf(io_s->stderr, "Error[vplayer]: skip frame\n");
 		}
 		shrb_free(cb);
 	}
@@ -50,6 +49,8 @@ static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
 	};
 
 	iob_add_video_frames_handler(iob, &handler);
+
+	mclk_init(&mclk);
 	return 0;
 }
 
