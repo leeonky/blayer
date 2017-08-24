@@ -258,3 +258,36 @@ SUITE_CASE("no frame to receive") {
 }
 
 SUITE_END(ffmpeg_decode_test)
+
+SUITE_START("ffmpeg_decoded_size_test");
+
+static int arg_align;
+
+BEFORE_EACH() {
+	decoder.codec_context = &codec_context;
+	arg_align = 8;
+	return 0;
+}
+
+static int stub_av_image_get_buffer_size(enum AVPixelFormat format, int width, int height, int align) {
+	return 100;
+}
+
+SUITE_CASE("get frame buffer size for video") {
+	codec_context.width = 1920;
+	codec_context.height = 1080;
+	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
+	codec_context.codec_type = AVMEDIA_TYPE_VIDEO;
+
+	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
+
+	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder, arg_align), 100);
+
+	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, arg_align);
+}
+
+SUITE_END(ffmpeg_decoded_size_test);

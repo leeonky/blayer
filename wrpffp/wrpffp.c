@@ -111,16 +111,6 @@ int ffmpeg_read(ffmpeg_stream *stream) {
 	return res;
 }
 
-int ffmpeg_frame_size(ffmpeg_stream *stream, int align) {
-	AVCodecParameters *codecpar = stream->stream->codecpar;
-	if (AVMEDIA_TYPE_VIDEO == codecpar->codec_type)
-		return av_image_get_buffer_size(codecpar->format, codecpar->width, codecpar->height, align);
-	else {
-		fputs ("ffmpeg_frame_size not support audio yet\n", stderr);
-		abort();
-	}
-}
-
 int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	int res = 0;
 	if((res=ffmpeg_read(stream)) >= 0)
@@ -128,6 +118,16 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	else
 		avcodec_send_packet(decoder->codec_context, NULL);
 	return res;
+}
+
+int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
+	AVCodecContext *codec_context = decoder->codec_context;
+	if (AVMEDIA_TYPE_VIDEO == codec_context->codec_type)
+		return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, align);
+	else {
+		fputs ("ffmpeg_frame_size not support audio yet\n", stderr);
+		abort();
+	}
 }
 
 int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
