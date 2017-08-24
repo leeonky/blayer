@@ -71,9 +71,10 @@ int ffmpeg_open_stream(const char *file, enum AVMediaType type, int track, void 
 
 int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
 	int res = 0, ret;
-	ffmpeg_decoder decoder;
 	AVCodec *codec;
-	decoder.stream = stream;
+	ffmpeg_decoder decoder = {
+		.stream = stream,
+	};
 	if((codec = avcodec_find_decoder(stream->stream->codecpar->codec_id))) {
 		if ((decoder.codec_context = avcodec_alloc_context3(codec))) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
@@ -162,17 +163,29 @@ int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
 	if(AV_NOPTS_VALUE == pts) {
-		return frame->decoder->_pts += frame->decoder->_duration;
+		return frame->decoder->_pts += frame->decoder->_prev_duration;
 	} else {
 		if(frame->decoder->frame->pkt_duration) {
-			frame->decoder->_duration = av_rescale_q(frame->decoder->frame->pkt_duration, stream->time_base, AV_TIME_BASE_Q);
-		} else if(codec_context->framerate.num != 0 && codec_context->framerate.den != 0) {
-			int ticks = stream->parser ? stream->parser->repeat_pict+1 : codec_context->ticks_per_frame;
-			frame->decoder->_duration = ((int64_t)AV_TIME_BASE *
-					codec_context->framerate.den * ticks) /
-				codec_context->framerate.num / codec_context->ticks_per_frame;
+			frame->decoder->_prev_duration = av_rescale_q(frame->decoder->frame->pkt_duration, stream->time_base, AV_TIME_BASE_Q);
 		} else {
-			frame->decoder->_duration = 3000;
+			switch(codec_context->codec_type) {
+				case AVMEDIA_TYPE_VIDEO:
+					if(codec_context->framerate.num != 0 && codec_context->framerate.den != 0) {
+						int ticks = stream->parser ? stream->parser->repeat_pict+1 : codec_context->ticks_per_frame;
+						frame->decoder->_prev_duration = ((int64_t)AV_TIME_BASE *
+								codec_context->framerate.den * ticks) /
+							codec_context->framerate.num / codec_context->ticks_per_frame;
+					} else {
+						frame->decoder->_prev_duration = 3000;
+					}
+					break;
+				case AVMEDIA_TYPE_AUDIO:
+					frame->decoder->_prev_duration = frame->frame->nb_samples;
+					break;
+				default:
+					not_support_media_type(codec_context->codec_type);
+					break;
+			}
 		}
 		return frame->decoder->_pts = av_rescale_q(pts-stream->start_time, stream->time_base, AV_TIME_BASE_Q);
 	}
@@ -204,7 +217,17 @@ const char *ffmpeg_media_info(const ffmpeg_decoder *decoder) {
 
 const char *ffmpeg_frame_info(const ffmpeg_frame *frame) {
 	static __thread char buffer[1024];
-	sprintf(buffer, "%lld", ffmpeg_frame_present_timestamp(frame));
+	switch(frame->codec_type) {
+		case AVMEDIA_TYPE_VIDEO:
+			sprintf(buffer, "%lld", ffmpeg_frame_present_timestamp(frame));
+			break;
+		case AVMEDIA_TYPE_AUDIO:
+			sprintf(buffer, "%lld,%d,%d", ffmpeg_frame_present_timestamp(frame), frame->frame->nb_samples, frame->frame->pkt_duration);
+			break;
+		default:
+			not_support_media_type(frame->codec_type);
+			break;
+	}
 	return buffer;
 }
 

@@ -23,7 +23,8 @@ typedef struct ffmpeg_decoder {
 	AVFrame *frame;
 	ffmpeg_stream *stream;
 	int64_t _pts;
-	int64_t _duration;
+	int64_t _prev_duration;
+	int64_t _avg_duration;
 } ffmpeg_decoder;
 
 typedef struct ffmpeg_frame {
