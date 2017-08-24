@@ -1,5 +1,12 @@
 #include "wrpffp.h"
 
+static inline void unsupported_operation(const char *fun, enum AVMediaType t) {
+	fprintf(stderr, "%s not support [%s] yet\n", fun, av_get_media_type_string(t));
+	abort();
+}
+
+#define not_support_media_type(t) unsupported_operation(__FUNCTION__, t)
+
 static int print_error(int no, FILE *stderr) {
 	char buffer[1024];
 	av_strerror(no, buffer, sizeof(buffer));
@@ -69,6 +76,33 @@ int ffmpeg_open_stream(const char *file, enum AVMediaType type, int track, void 
 	return ffmpeg_open(file, &stream_arg, find_stream_process, io_s);
 }
 
+static int64_t samples_to_duration(int size, const AVCodecContext *codec_context) {
+	return (int64_t)size*1000000/codec_context->sample_rate;
+}
+
+static void guess_avg_duration(ffmpeg_decoder *decoder) {
+	AVStream *stream = decoder->stream->stream;
+	AVCodecContext *codec_context = decoder->codec_context;
+	switch(codec_context->codec_type) {
+		case AVMEDIA_TYPE_VIDEO:
+			if(codec_context->framerate.num != 0 && codec_context->framerate.den != 0) {
+				int ticks = stream->parser ? stream->parser->repeat_pict+1 : codec_context->ticks_per_frame;
+				decoder->_avg_duration = ((int64_t)AV_TIME_BASE *
+						codec_context->framerate.den * ticks) /
+					codec_context->framerate.num / codec_context->ticks_per_frame;
+			}
+			break;
+		case AVMEDIA_TYPE_AUDIO:
+			if(codec_context->frame_size) {
+				decoder->_avg_duration = samples_to_duration(codec_context->frame_size, codec_context);
+			}
+			break;
+		default:
+			not_support_media_type(codec_context->codec_type);
+			break;
+	}
+}
+
 int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
 	int res = 0, ret;
 	AVCodec *codec;
@@ -79,6 +113,7 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 		if ((decoder.codec_context = avcodec_alloc_context3(codec))) {
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
+				guess_avg_duration(&decoder);
 				if((decoder.frame = av_frame_alloc())) {
 					if (process) {
 						res = process(stream, &decoder, arg, io_s);
@@ -121,13 +156,6 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
-static inline void unsupported_operation(const char *fun, enum AVMediaType t) {
-	fprintf(stderr, "%s not support [%s] yet\n", fun, av_get_media_type_string(t));
-	abort();
-}
-
-#define not_support_media_type(t) unsupported_operation(__FUNCTION__, t)
-
 int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 	AVCodecContext *codec_context = decoder->codec_context;
 	switch(codec_context->codec_type) {
@@ -158,37 +186,37 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 	return res;
 }
 
-int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
-	AVStream *stream = frame->decoder->stream->stream;
-	AVCodecContext *codec_context = frame->decoder->codec_context;
-	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
-	if(AV_NOPTS_VALUE == pts) {
-		return frame->decoder->_pts += frame->decoder->_prev_duration;
-	} else {
-		if(frame->decoder->frame->pkt_duration) {
-			frame->decoder->_prev_duration = av_rescale_q(frame->decoder->frame->pkt_duration, stream->time_base, AV_TIME_BASE_Q);
-		} else {
-			switch(codec_context->codec_type) {
-				case AVMEDIA_TYPE_VIDEO:
-					if(codec_context->framerate.num != 0 && codec_context->framerate.den != 0) {
-						int ticks = stream->parser ? stream->parser->repeat_pict+1 : codec_context->ticks_per_frame;
-						frame->decoder->_prev_duration = ((int64_t)AV_TIME_BASE *
-								codec_context->framerate.den * ticks) /
-							codec_context->framerate.num / codec_context->ticks_per_frame;
-					} else {
-						frame->decoder->_prev_duration = 3000;
-					}
-					break;
-				case AVMEDIA_TYPE_AUDIO:
-					frame->decoder->_prev_duration = frame->frame->nb_samples;
-					break;
-				default:
-					not_support_media_type(codec_context->codec_type);
-					break;
-			}
-		}
-		return frame->decoder->_pts = av_rescale_q(pts-stream->start_time, stream->time_base, AV_TIME_BASE_Q);
+static inline int64_t guess_duration(const AVFrame *frame, const AVCodecContext *codec_context) {
+	switch(codec_context->codec_type) {
+		case AVMEDIA_TYPE_VIDEO:
+			return 33367;
+		case AVMEDIA_TYPE_AUDIO:
+			return samples_to_duration(frame->nb_samples, codec_context);
+		default:
+			not_support_media_type(codec_context->codec_type);
+			break;
 	}
+}
+
+int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
+	ffmpeg_decoder *decoder = frame->decoder;
+	AVFrame *avframe = decoder->frame;
+	AVStream *stream = decoder->stream->stream;
+
+	int64_t pts = av_frame_get_best_effort_timestamp(avframe);
+	if(AV_NOPTS_VALUE == pts)
+		decoder->_prev_pts += decoder->_prev_duration;
+	else
+		decoder->_prev_pts = av_rescale_q(pts-stream->start_time, stream->time_base, AV_TIME_BASE_Q);
+
+	if(avframe->pkt_duration)
+		decoder->_prev_duration = av_rescale_q(avframe->pkt_duration, stream->time_base, AV_TIME_BASE_Q);
+	else if(decoder->_avg_duration)
+		decoder->_prev_duration = decoder->_avg_duration;
+	else
+		decoder->_prev_duration = guess_duration(avframe, decoder->codec_context);
+
+	return decoder->_prev_pts;
 }
 
 const char *ffmpeg_media_info(const ffmpeg_decoder *decoder) {
@@ -222,7 +250,7 @@ const char *ffmpeg_frame_info(const ffmpeg_frame *frame) {
 			sprintf(buffer, "%lld", ffmpeg_frame_present_timestamp(frame));
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			sprintf(buffer, "%lld,%d,%d", ffmpeg_frame_present_timestamp(frame), frame->frame->nb_samples, frame->frame->pkt_duration);
+			sprintf(buffer, "%lld,%d", ffmpeg_frame_present_timestamp(frame), frame->frame->nb_samples);
 			break;
 		default:
 			not_support_media_type(frame->codec_type);
