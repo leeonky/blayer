@@ -17,12 +17,6 @@ static char frame_buffer[100];
 
 BEFORE_EACH() {
 	arg_fframe.frame = &avframe;
-	arg_fframe.codec_type = AVMEDIA_TYPE_VIDEO;
-	arg_fframe.align = 10;
-	avframe.width = 1080;
-	avframe.height = 640;
-	avframe.format = AV_PIX_FMT_NV12;
-
 	init_subject("");
 
 	init_mock_function(av_image_copy_to_buffer, NULL);
@@ -39,7 +33,13 @@ SUBJECT(int) {
 	return ffmpeg_frame_copy(&arg_fframe, frame_buffer, sizeof(frame_buffer), &io_s);
 }
 
-SUITE_CASE("ffmpeg_frame_copy") {
+SUITE_CASE("ffmpeg_frame_copy for video") {
+	arg_fframe.codec_type = AVMEDIA_TYPE_VIDEO;
+	arg_fframe.align = 10;
+	avframe.width = 1080;
+	avframe.height = 640;
+	avframe.format = AV_PIX_FMT_NV12;
+
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(av_image_copy_to_buffer);
@@ -58,11 +58,49 @@ static int stub_av_image_copy_to_buffer_error(uint8_t *b, int s, const uint8_t *
 }
 
 SUITE_CASE("failed to copy") {
+	arg_fframe.codec_type = AVMEDIA_TYPE_VIDEO;
 	init_mock_function(av_image_copy_to_buffer, stub_av_image_copy_to_buffer_error);
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
 	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -10\n");
+}
+
+static int stub_av_samples_copy_assert(uint8_t **dst, uint8_t * const *src, int dst_of, int src_of, int nb_samples, int nb_channels, enum AVSampleFormat format) {
+	CUE_ASSERT_PTR_EQ(dst[0], frame_buffer);
+	CUE_ASSERT_PTR_EQ(src[0], avframe.data[0]);
+	return 0;
+}
+
+SUITE_CASE("copy for audio") {
+	arg_fframe.codec_type = AVMEDIA_TYPE_AUDIO;
+	avframe.nb_samples = 100;
+	avframe.format = AV_SAMPLE_FMT_DBL;
+	avframe.channels = 7;
+
+	init_mock_function(av_samples_copy, stub_av_samples_copy_assert);
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_copy);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 3, 0);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 4, 0);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 5, 100);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 6, 7);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 7, AV_SAMPLE_FMT_DBL);
+}
+
+static int stub_av_samples_copy_failed(uint8_t **dst, uint8_t * const *src, int dst_of, int src_of, int nb_samples, int nb_channels, enum AVSampleFormat format) {
+	return -100;
+}
+
+SUITE_CASE("failed to copy") {
+	arg_fframe.codec_type = AVMEDIA_TYPE_AUDIO;
+	init_mock_function(av_samples_copy, stub_av_samples_copy_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -100\n");
 }
 
 SUITE_END(ffmpeg_frame_copy_test);

@@ -183,12 +183,22 @@ const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
 int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, io_stream *io_s) {
 	int res = 0, ret;
 	AVFrame *avframe = frame->frame;
-	if (AVMEDIA_TYPE_VIDEO == frame->codec_type) {
-		if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, frame->align)) < 0 )
-			res = print_error(ret, io_s->stderr);
-	} else {
-		fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);
-		abort();
+	switch(frame->codec_type) {
+		case AVMEDIA_TYPE_VIDEO:
+			if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, frame->align)) < 0 )
+				res = print_error(ret, io_s->stderr);
+			break;
+		case AVMEDIA_TYPE_AUDIO:
+			{
+				uint8_t *dst_bufs[] = {buf};
+				if((ret=av_samples_copy(dst_bufs, avframe->data, 0, 0, avframe->nb_samples, avframe->channels, avframe->format))<0)
+					res = print_error(ret, io_s->stderr);
+			}
+			break;
+		default:
+			fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);
+			abort();
+			break;
 	}
 	return res;
 }

@@ -31,5 +31,6 @@ extern_mock_function_3(int64_t, av_rescale_q, int64_t, AVRational, AVRational);
 extern_mock_function_8(int, av_image_copy_to_buffer, uint8_t *, int, const uint8_t * const *, const int *, enum AVPixelFormat, int, int, int)
 
 extern_mock_function_5(int, av_samples_get_buffer_size, int *, int, int, enum AVSampleFormat, int);
+extern_mock_function_7(int, av_samples_copy, uint8_t **, uint8_t * const *, int, int, int, int, enum AVSampleFormat);
 
 #endif
