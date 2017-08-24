@@ -330,3 +330,29 @@ SUITE_CASE("audio codec_context frame_size not set") {
 }
 
 SUITE_END(ffmpeg_decoded_size_test);
+
+SUITE_START("ffmpeg_output_decoded_format_test");
+
+BEFORE_EACH() {
+	decoder.codec_context = &codec_context;
+}
+
+SUITE_CASE("output video") {
+	decoder.codec_context->codec_type = AVMEDIA_TYPE_VIDEO;
+	decoder.codec_context->width = 1920;
+	decoder.codec_context->height = 1080;
+	decoder.codec_context->pix_fmt = 10;
+
+	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "VFS w:1920 h:1080 fmt:10");
+}
+
+SUITE_CASE("output audio") {
+	decoder.codec_context->codec_type = AVMEDIA_TYPE_AUDIO;
+	decoder.codec_context->channels = 8;
+	decoder.codec_context->sample_rate = 96000;
+	decoder.codec_context->sample_fmt = 3;
+
+	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "AFS ch:8 rt:96000 fmt:3");
+}
+
+SUITE_END(ffmpeg_output_decoded_format_test);

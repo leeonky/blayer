@@ -49,9 +49,11 @@ extern int ffmpeg_decode(ffmpeg_decoder *, int, void *, int (*)(ffmpeg_decoder *
 
 extern int ffmpeg_decoded_size(ffmpeg_decoder *, int);
 
-int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *);
+extern int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *);
 
-extern const char *ffmpeg_video_info(ffmpeg_decoder *);
+extern const char *ffmpeg_media_info(const ffmpeg_decoder *);
+
+extern const char *ffmpeg_frame_info(const ffmpeg_frame *);
 
 extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, size_t, io_stream *);
 

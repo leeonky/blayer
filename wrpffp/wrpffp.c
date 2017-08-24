@@ -120,6 +120,13 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
+static inline void unsupported_operation(const char *fun, enum AVMediaType t) {
+	fprintf(stderr, "%s not support [%s] yet\n", fun, av_get_media_type_string(t));
+	abort();
+}
+
+#define not_support_media_type(t) unsupported_operation(__FUNCTION__, t)
+
 int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 	AVCodecContext *codec_context = decoder->codec_context;
 	switch(codec_context->codec_type) {
@@ -130,8 +137,8 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 					codec_context->frame_size ? codec_context->frame_size : codec_context->sample_rate/2,
 					codec_context->sample_fmt, align!=0);
 		default:
-			fprintf(stderr, "ffmpeg_frame_size not support [%s] yet\n", av_get_media_type_string(codec_context->codec_type));
-			abort();
+			not_support_media_type(codec_context->codec_type);
+			break;
 	}
 }
 
@@ -150,7 +157,7 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 	return res;
 }
 
-int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
+int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
 	AVStream *stream = frame->decoder->stream->stream;
 	AVCodecContext *codec_context = frame->decoder->codec_context;
 	int64_t pts = av_frame_get_best_effort_timestamp(frame->decoder->frame);
@@ -171,14 +178,33 @@ int64_t ffmpeg_frame_present_timestamp(ffmpeg_frame *frame) {
 	}
 }
 
-const char *ffmpeg_video_info(ffmpeg_decoder *decoder) {
+const char *ffmpeg_media_info(const ffmpeg_decoder *decoder) {
 	static __thread char buffer[1024];
 	AVCodecContext *codec_context = decoder->codec_context;
-	sprintf(buffer, "w:%d h:%d fmt:%d",
-			codec_context->width,
-			codec_context->height,
-			codec_context->pix_fmt);
+	switch(codec_context->codec_type) {
+		case AVMEDIA_TYPE_VIDEO:
+			sprintf(buffer, "VFS w:%d h:%d fmt:%d",
+					codec_context->width,
+					codec_context->height,
+					codec_context->pix_fmt);
+			break;
+		case AVMEDIA_TYPE_AUDIO:
+			sprintf(buffer, "AFS ch:%d rt:%d fmt:%d",
+					codec_context->channels,
+					codec_context->sample_rate,
+					codec_context->sample_fmt);
+			break;
+		default:
+			not_support_media_type(codec_context->codec_type);
+			break;
+	}
 
+	return buffer;
+}
+
+const char *ffmpeg_frame_info(const ffmpeg_frame *frame) {
+	static __thread char buffer[1024];
+	sprintf(buffer, "%lld", ffmpeg_frame_present_timestamp(frame));
 	return buffer;
 }
 
@@ -198,8 +224,7 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, io_stream *io
 			}
 			break;
 		default:
-			fputs ("ffmpeg_frame_copy not support audio yet\n", stderr);
-			abort();
+			not_support_media_type(frame->codec_type);
 			break;
 	}
 	return res;

@@ -28,31 +28,31 @@ SUITE_CASE("should got file name when only set video file") {
 	init_subject("", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
-	CUE_ASSERT_EQ(args.video_index, -1);
+	CUE_ASSERT_EQ(args.track_index, -1);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can set opt of video track") {
-	init_subject("", "-v", "1", "test.avi", "test");
+	init_subject("", "-t", "1", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
-	CUE_ASSERT_EQ(args.video_index, 1);
+	CUE_ASSERT_EQ(args.track_index, 1);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can set long opt of video track") {
-	init_subject("", "--video_index", "2", "test.avi", "test");
+	init_subject("", "--track_index", "2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
-	CUE_ASSERT_EQ(args.video_index, 2);
+	CUE_ASSERT_EQ(args.track_index, 2);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can add '=' between long opt and value") {
-	init_subject("", "--video_index=2", "test.avi", "test");
+	init_subject("", "--track_index=2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
-	CUE_ASSERT_EQ(args.video_index, 2);
+	CUE_ASSERT_EQ(args.track_index, 2);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
