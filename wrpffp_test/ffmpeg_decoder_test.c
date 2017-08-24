@@ -296,7 +296,6 @@ static int stub_av_samples_get_buffer_size(int *lines, int channels, int samples
 SUITE_CASE("get frame buffer size for audio") {
 	codec_context.codec_type = AVMEDIA_TYPE_AUDIO;
 	codec_context.channels = 8;
-	codec_context.sample_rate = 96000;
 	codec_context.sample_fmt = AV_SAMPLE_FMT_S64;
 	codec_context.frame_size = 128;
 	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
@@ -307,6 +306,25 @@ SUITE_CASE("get frame buffer size for audio") {
 	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 8);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 128);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_S64);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 1);
+}
+
+SUITE_CASE("audio codec_context frame_size not set") {
+	codec_context.codec_type = AVMEDIA_TYPE_AUDIO;
+	codec_context.channels = 8;
+	codec_context.sample_rate = 96000;
+	codec_context.sample_fmt = AV_SAMPLE_FMT_S64;
+	codec_context.frame_size = 0;
+
+	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
+
+	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder, arg_align), 1000);
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 8);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 48000);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_S64);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 1);
 }

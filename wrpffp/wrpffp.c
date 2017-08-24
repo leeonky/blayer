@@ -126,7 +126,9 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 		case AVMEDIA_TYPE_VIDEO:
 			return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, align);
 		case AVMEDIA_TYPE_AUDIO:
-			return av_samples_get_buffer_size(NULL, codec_context->channels, codec_context->frame_size, codec_context->sample_fmt, align!=0);
+			return av_samples_get_buffer_size(NULL, codec_context->channels,
+					codec_context->frame_size ? codec_context->frame_size : codec_context->sample_rate/2,
+					codec_context->sample_fmt, align!=0);
 		default:
 			fprintf(stderr, "ffmpeg_frame_size not support [%s] yet\n", av_get_media_type_string(codec_context->codec_type));
 			abort();
