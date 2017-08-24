@@ -24,6 +24,8 @@ mock_function_7(int, av_image_fill_arrays, uint8_t **, int *, const uint8_t *, e
 mock_function_3(int64_t, av_rescale_q, int64_t, AVRational, AVRational);
 mock_function_8(int, av_image_copy_to_buffer, uint8_t *, int, const uint8_t * const *, const int *, enum AVPixelFormat, int, int, int)
 
+mock_function_5(int, av_samples_get_buffer_size, int *, int, int, enum AVSampleFormat, int);
+
 int av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
 	snprintf(errbuf, errbuf_size, "%d", errnum);
 	return 0;

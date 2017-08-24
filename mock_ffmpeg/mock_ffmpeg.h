@@ -24,9 +24,12 @@ extern_mock_void_function_1(avcodec_free_context, AVCodecContext **);
 extern_mock_void_function_1(av_frame_free, AVFrame **);
 extern_mock_void_function_1(avformat_close_input, AVFormatContext **);
 extern_mock_function_1(const char *, av_get_media_type_string, enum AVMediaType);
+
 extern_mock_function_4(int, av_image_get_buffer_size, enum AVPixelFormat, int, int, int);
 extern_mock_function_7(int, av_image_fill_arrays, uint8_t **, int *, const uint8_t *, enum AVPixelFormat, int, int, int);
 extern_mock_function_3(int64_t, av_rescale_q, int64_t, AVRational, AVRational);
 extern_mock_function_8(int, av_image_copy_to_buffer, uint8_t *, int, const uint8_t * const *, const int *, enum AVPixelFormat, int, int, int)
+
+extern_mock_function_5(int, av_samples_get_buffer_size, int *, int, int, enum AVSampleFormat, int);
 
 #endif
