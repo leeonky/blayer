@@ -85,9 +85,9 @@ SUITE_CASE("should open and close stream's decoder; return process value") {
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_open2, 1, &codec_context);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_open2, 2, &codec);
 
-	CUE_EXPECT_CALLED_TIMES(av_frame_alloc, 1);
+	CUE_EXPECT_CALLED_TIMES(av_frame_alloc, 2);
 
-	CUE_EXPECT_CALLED_TIMES(av_frame_free, 1);
+	CUE_EXPECT_CALLED_TIMES(av_frame_free, 2);
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_close);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_close, 1, &codec_context);
@@ -235,7 +235,7 @@ SUBJECT(int) {
 	return ffmpeg_decode(&decoder, arg_align, &int_arg, process_frame, &io_s);
 }
 
-SUITE_CASE("decode to frame and invoke process") {
+SUITE_CASE("decode video to frame and invoke process") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_receive_frame);

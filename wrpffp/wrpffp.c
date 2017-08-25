@@ -115,8 +115,14 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
 				guess_avg_duration(&decoder);
 				if((decoder.wframe = av_frame_alloc())) {
-					if (process) {
-						res = process(stream, &decoder, arg, io_s);
+					if((decoder.rframe = av_frame_alloc())) {
+						if (process) {
+							res = process(stream, &decoder, arg, io_s);
+						}
+						av_frame_free(&decoder.rframe);
+					} else {
+						res = -1;
+						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
 					}
 					av_frame_free(&decoder.wframe);
 				} else {
