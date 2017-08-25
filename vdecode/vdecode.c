@@ -52,14 +52,8 @@ static int process_decoded_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, v
 
 static int cbuf_allocated(shm_cbuf *cbuf, void *arg, io_stream *io_s) {
 	app_context *context = (app_context *)arg;
-	ffmpeg_stream *stream = context->stream;
-	ffmpeg_decoder *decoder = context->decoder;
 	context->cbuf = cbuf;
-	while(!ffmpeg_read_and_feed(stream, decoder)) {
-		ffmpeg_decode(decoder, 1, arg, process_decoded_frame, io_s);
-	}
-	while(!ffmpeg_decode(decoder, 1, arg, process_decoded_frame, io_s));
-	return 0;
+	return ffmpeg_decoding(context->stream, context->decoder, 1, arg, process_decoded_frame, io_s);
 }
 
 static int decoder_opened(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
@@ -78,7 +72,7 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 
 	if(!process_args(&args, argc, argv, stderr)) {
 		io_stream io_s = {stdin, stdout, stderr};
-		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_AUDIO, args.track_index, &context, process_video_stream, &io_s);
+		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.track_index, &context, process_video_stream, &io_s);
 	}
 	return -1;
 }

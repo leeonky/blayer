@@ -169,6 +169,7 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 			not_support_media_type(codec_context->codec_type);
 			break;
 	}
+	return -1;
 }
 
 int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
@@ -186,6 +187,14 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 	return res;
 }
 
+int ffmpeg_decoding(ffmpeg_stream *stream, ffmpeg_decoder *decoder, int align, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+	while(!ffmpeg_read_and_feed(stream, decoder)) {
+		ffmpeg_decode(decoder, 1, arg, action, io_s);
+	}
+	while(!ffmpeg_decode(decoder, 1, arg, action, io_s));
+	return 0;
+}
+
 static inline int64_t guess_duration(const AVFrame *frame, const AVCodecContext *codec_context) {
 	switch(codec_context->codec_type) {
 		case AVMEDIA_TYPE_VIDEO:
@@ -196,6 +205,7 @@ static inline int64_t guess_duration(const AVFrame *frame, const AVCodecContext 
 			not_support_media_type(codec_context->codec_type);
 			break;
 	}
+	return -1;
 }
 
 int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
