@@ -173,7 +173,7 @@ BEFORE_EACH() {
 	streams[0].index = 0;
 
 	decoder.codec_context = &codec_context;
-	decoder.frame = &frame;
+	decoder.wframe = &frame;
 
 	init_subject("");
 	init_mock_function(av_read_frame, stub_av_read_frame_index_0);

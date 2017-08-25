@@ -202,7 +202,7 @@ static int stub_avcodec_receive_frame_got_frame(AVCodecContext *codec_context, A
 BEFORE_EACH() {
 	arg_align = 32;
 	decoder.codec_context = &codec_context;
-	decoder.frame = &frame;
+	decoder.wframe = &frame;
 
 	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
 	codec_context.width = 1920;
@@ -224,7 +224,7 @@ AFTER_EACH() {
 
 static int process_frame(ffmpeg_decoder *d, ffmpeg_frame *f, void *arg, io_stream *io_s) {
 	*(int *)arg = 100;
-	CUE_ASSERT_PTR_EQ(f->frame, d->frame);
+	CUE_ASSERT_PTR_EQ(f->frame, d->wframe);
 	CUE_ASSERT_EQ(f->codec_type, AVMEDIA_TYPE_VIDEO);
 	CUE_ASSERT_EQ(f->align, arg_align);
 	return 0;
@@ -240,7 +240,7 @@ SUITE_CASE("decode to frame and invoke process") {
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_receive_frame);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 1, decoder.codec_context);
-	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 2, decoder.frame);
+	CUE_EXPECT_CALLED_WITH_PTR(avcodec_receive_frame, 2, decoder.wframe);
 
 	CUE_ASSERT_EQ(int_arg, 100);
 }

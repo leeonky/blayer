@@ -114,11 +114,11 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
 				guess_avg_duration(&decoder);
-				if((decoder.frame = av_frame_alloc())) {
+				if((decoder.wframe = av_frame_alloc())) {
 					if (process) {
 						res = process(stream, &decoder, arg, io_s);
 					}
-					av_frame_free(&decoder.frame);
+					av_frame_free(&decoder.wframe);
 				} else {
 					res = -1;
 					fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
@@ -176,12 +176,12 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {
 		.decoder = decoder,
-		.frame = decoder->frame,
 		.codec_type = decoder->codec_context->codec_type,
 		.align = align,
 	};
 	AVCodecContext *codec_context = decoder->codec_context;
-	if(!(res=avcodec_receive_frame(codec_context, fffrm.frame))) {
+	if(!(res=avcodec_receive_frame(codec_context, decoder->wframe))) {
+		fffrm.frame = decoder->wframe;
 		process(decoder, &fffrm, arg, io_s);
 	}
 	return res;
@@ -202,7 +202,7 @@ static inline int64_t guess_duration(const AVFrame *frame, const AVCodecContext 
 
 int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *frame) {
 	ffmpeg_decoder *decoder = frame->decoder;
-	AVFrame *avframe = decoder->frame;
+	AVFrame *avframe = frame->frame;
 	AVStream *stream = decoder->stream->stream;
 
 	int64_t pts = av_frame_get_best_effort_timestamp(avframe);
