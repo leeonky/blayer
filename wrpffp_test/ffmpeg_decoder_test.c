@@ -324,7 +324,7 @@ SUITE_CASE("audio codec_context frame_size not set") {
 	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 8);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 48000);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 9600);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_S64);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 1);
 }

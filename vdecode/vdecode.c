@@ -35,7 +35,7 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	if(optind < argc)
 		args->file_name = argv[optind++];
 	if(!args->file_name) {
-		fprintf(stderr, "Error[vdecode]: require video file\n");
+		fprintf(stderr, "Error[vdecode]: require media file\n");
 		return -1;
 	}
 	return 0;
@@ -61,7 +61,7 @@ static int decoder_opened(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *
 	return shrb_new(((app_context *)arg)->args->buffer_bits, ffmpeg_decoded_size(decoder, 1), arg, cbuf_allocated, io_s);
 }
 
-static int process_video_stream(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
+static int stream_opened(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	((app_context *)arg)->stream = stream;
 	return ffmpeg_open_decoder(stream, arg, decoder_opened, io_s);
 }
@@ -72,7 +72,7 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 
 	if(!process_args(&args, argc, argv, stderr)) {
 		io_stream io_s = {stdin, stdout, stderr};
-		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.track_index, &context, process_video_stream, &io_s);
+		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_AUDIO, args.track_index, &context, stream_opened, &io_s);
 	}
 	return -1;
 }

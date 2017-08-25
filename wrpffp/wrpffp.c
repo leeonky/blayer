@@ -163,7 +163,7 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 			return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, align);
 		case AVMEDIA_TYPE_AUDIO:
 			return av_samples_get_buffer_size(NULL, codec_context->channels,
-					codec_context->frame_size ? codec_context->frame_size : codec_context->sample_rate/2,
+					codec_context->frame_size ? codec_context->frame_size : codec_context->sample_rate/10,
 					codec_context->sample_fmt, align!=0);
 		default:
 			not_support_media_type(codec_context->codec_type);
