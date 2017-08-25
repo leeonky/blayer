@@ -26,6 +26,7 @@ typedef struct ffmpeg_decoder {
 	int64_t _prev_pts;
 	int64_t _prev_duration;
 	int64_t _avg_duration;
+	int samples_size;
 } ffmpeg_decoder;
 
 typedef struct ffmpeg_frame {

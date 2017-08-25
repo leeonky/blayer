@@ -186,9 +186,33 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 		.align = align,
 	};
 	AVCodecContext *codec_context = decoder->codec_context;
-	if(!(res=avcodec_receive_frame(codec_context, decoder->wframe))) {
-		fffrm.frame = decoder->wframe;
-		process(decoder, &fffrm, arg, io_s);
+	AVFrame *wframe = decoder->wframe;
+	AVFrame *rframe = decoder->rframe;
+
+	if(!(res=avcodec_receive_frame(codec_context, wframe))) {
+		switch(codec_context->codec_type) {
+			case AVMEDIA_TYPE_VIDEO:
+				fffrm.frame = wframe;
+				process(decoder, &fffrm, arg, io_s);
+				break;
+			case AVMEDIA_TYPE_AUDIO:
+				if(rframe->nb_samples + wframe->nb_samples > decoder->samples_size) {
+					if(process) {
+						fffrm.frame = rframe;
+						process(decoder, &fffrm, arg, io_s);
+					}
+					rframe->nb_samples = 0;
+				}
+				av_samples_copy(rframe->data, wframe->data,
+						rframe->nb_samples, 0,
+						wframe->nb_samples,
+						wframe->channels, wframe->format);
+				rframe->nb_samples += wframe->nb_samples;
+				break;
+			default:
+				not_support_media_type(codec_context->codec_type);
+				break;
+		}
 	}
 	return res;
 }
