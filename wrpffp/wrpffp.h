@@ -48,8 +48,6 @@ extern int ffmpeg_read_and_feed(ffmpeg_stream *, ffmpeg_decoder *);
 
 extern int ffmpeg_decode(ffmpeg_decoder *, int, void *, int (*)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *);
 
-extern int ffmpeg_decoding(ffmpeg_stream *, ffmpeg_decoder *, int, void *, int (*)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *);
-
 extern int ffmpeg_decoded_size(ffmpeg_decoder *, int);
 
 extern int64_t ffmpeg_frame_present_timestamp(const ffmpeg_frame *);
