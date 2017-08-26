@@ -157,8 +157,10 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	int res = 0;
 	if((res=ffmpeg_read(stream)) >= 0)
 		res = avcodec_send_packet(decoder->codec_context, &stream->packet);
-	else
+	else {
 		avcodec_send_packet(decoder->codec_context, NULL);
+		decoder->stream_ended = 1;
+	}
 	return res;
 }
 
@@ -178,7 +180,18 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 	return -1;
 }
 
-int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+static inline int output_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, AVFrame *avframe, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	if(action) {
+		frame->frame = avframe;
+		res = action(decoder, frame, arg, io_s);
+	}
+	avframe->nb_samples = 0;
+	avframe->pkt_duration = 0;
+	return res;
+}
+
+int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {
 		.decoder = decoder,
@@ -193,16 +206,11 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 		switch(codec_context->codec_type) {
 			case AVMEDIA_TYPE_VIDEO:
 				fffrm.frame = wframe;
-				process(decoder, &fffrm, arg, io_s);
+				res = action(decoder, &fffrm, arg, io_s);
 				break;
 			case AVMEDIA_TYPE_AUDIO:
-				if(rframe->nb_samples + wframe->nb_samples > decoder->samples_size) {
-					if(process) {
-						fffrm.frame = rframe;
-						process(decoder, &fffrm, arg, io_s);
-					}
-					rframe->nb_samples = 0;
-				}
+				if(rframe->nb_samples + wframe->nb_samples > decoder->samples_size)
+					res = output_frame(decoder, &fffrm, rframe, arg, action, io_s);
 				av_samples_copy(rframe->data, wframe->data,
 						rframe->nb_samples, 0,
 						wframe->nb_samples,
@@ -214,6 +222,8 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*process)(
 				break;
 		}
 	}
+	if(decoder->stream_ended && decoder->rframe->nb_samples)
+		output_frame(decoder, &fffrm, rframe, arg, action, io_s);
 	return res;
 }
 

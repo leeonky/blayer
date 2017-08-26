@@ -198,6 +198,7 @@ SUITE_CASE("read and send data to decoder") {
 	CUE_EXPECT_CALLED_ONCE(avcodec_send_packet);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 1, &codec_context);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 2, &ffst.packet);
+	CUE_ASSERT_EQ(decoder.stream_ended, 0);
 }
 
 static int stub_av_read_frame_eof(AVFormatContext *format_context, AVPacket *packet) {
@@ -214,6 +215,7 @@ SUITE_CASE("enter last mode when get to the end of file") {
 	CUE_EXPECT_CALLED_ONCE(avcodec_send_packet);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 1, &codec_context);
 	CUE_EXPECT_CALLED_WITH_PTR(avcodec_send_packet, 2, NULL);
+	CUE_ASSERT_EQ(decoder.stream_ended, 1);
 }
 
 SUITE_END(ffmpeg_read_and_feed_test);

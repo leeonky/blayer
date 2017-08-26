@@ -66,6 +66,7 @@ SUITE_CASE("drain rframe when rframe full") {
 	arg_decoder.samples_size = 100;
 	arg_wframe.nb_samples = 50; 
 	arg_rframe.nb_samples = 60;
+	arg_rframe.pkt_duration = 100;
 	init_mock_function(ffmpeg_decode_action, ffmpeg_decode_action_assert);
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -85,9 +86,28 @@ SUITE_CASE("drain rframe when rframe full") {
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 7, 2);
 
 	CUE_ASSERT_EQ(arg_rframe.nb_samples, 50);
+	CUE_ASSERT_EQ(arg_rframe.pkt_duration, 0);
 }
 
-SUITE_CASE("stream to the end") {
+static int avcodec_receive_frame_no_more_frame(AVCodecContext *context, AVFrame *frame) {
+	return 1;
+}
+
+SUITE_CASE("stream to the end after last decode") {
+	arg_rframe.nb_samples = 60; 
+	arg_decoder.stream_ended = 1;
+	init_mock_function(ffmpeg_decode_action, ffmpeg_decode_action_assert);
+	init_mock_function(avcodec_receive_frame, avcodec_receive_frame_no_more_frame);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(1);
+
+	CUE_EXPECT_CALLED_ONCE(ffmpeg_decode_action);
+	CUE_EXPECT_CALLED_WITH_PTR(ffmpeg_decode_action, 1, &arg_decoder);
+	CUE_EXPECT_CALLED_WITH_PTR(ffmpeg_decode_action, 3, arg_arg);
+	CUE_EXPECT_CALLED_WITH_PTR(ffmpeg_decode_action, 4, &io_s);
+
+	CUE_ASSERT_EQ(arg_rframe.nb_samples, 0);
+	CUE_ASSERT_EQ(arg_rframe.pkt_duration, 0);
 }
 
 SUITE_CASE("audio data too large") {
