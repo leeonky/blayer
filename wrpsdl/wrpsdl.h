@@ -21,9 +21,11 @@ typedef struct sdl_audio {
 	SDL_AudioDeviceID device_id;
 	int freq, channels;
 	SDL_AudioFormat format;
+	int started;
 } sdl_audio;
 
 extern int sdl_init_audio(int, void *, int(*)(sdl_audio *, void *, io_stream *), io_stream *);
 extern int sdl_reload_audio(sdl_audio *, int, int, SDL_AudioFormat, void *, int(*)(sdl_audio *, void *, io_stream *), io_stream *);
+extern int sdl_play_audio(sdl_audio *, const void *, size_t);
 
 #endif

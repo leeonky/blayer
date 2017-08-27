@@ -23,6 +23,8 @@ mock_void_function_1(SDL_RenderPresent, SDL_Renderer *);
 mock_function_5(SDL_AudioDeviceID, SDL_OpenAudioDevice, const char *, int, const SDL_AudioSpec *, SDL_AudioSpec *, int);
 mock_void_function_1(SDL_CloseAudioDevice, SDL_AudioDeviceID);
 mock_function_2(const char *, SDL_GetAudioDeviceName, int, int);
+mock_void_function_2(SDL_PauseAudioDevice, SDL_AudioDeviceID, int);
+mock_function_3(int, SDL_QueueAudio, SDL_AudioDeviceID, const void *, Uint32);
 
 const char *SDL_GetError() {
 	return "sdl error";

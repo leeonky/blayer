@@ -110,3 +110,11 @@ int sdl_reload_audio(sdl_audio *audio, int freq, int channels, SDL_AudioFormat f
 		res = print_error(io_s->stderr);
 	return res;
 }
+
+int sdl_play_audio(sdl_audio *audio, const void *buffer, size_t buffer_len) {
+	if(!audio->started) {
+		SDL_PauseAudioDevice(audio->device_id, 0);
+		audio->started = 1;
+	}
+	return SDL_QueueAudio(audio->device_id, buffer, buffer_len);
+}

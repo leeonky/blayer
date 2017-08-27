@@ -27,5 +27,7 @@ extern_mock_void_function_1(SDL_RenderPresent, SDL_Renderer *);
 extern_mock_function_5(SDL_AudioDeviceID, SDL_OpenAudioDevice, const char *, int, const SDL_AudioSpec *, SDL_AudioSpec *, int);
 extern_mock_void_function_1(SDL_CloseAudioDevice, SDL_AudioDeviceID);
 extern_mock_function_2(const char *, SDL_GetAudioDeviceName, int, int);
+extern_mock_void_function_2(SDL_PauseAudioDevice, SDL_AudioDeviceID, int);
+extern_mock_function_3(int, SDL_QueueAudio, SDL_AudioDeviceID, const void *, Uint32);
 
 #endif
