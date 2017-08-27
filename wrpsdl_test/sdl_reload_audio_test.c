@@ -135,6 +135,7 @@ SUITE_CASE("different audio format") {
 	arg_audio.freq = arg_freq = 44100;
 	arg_audio.format = arg_format = 100;
 	arg_audio.channels = 6;
+	arg_audio.started = 1;
 	arg_channels = 8;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -150,6 +151,8 @@ SUITE_CASE("different audio format") {
 	CUE_EXPECT_CALLED_WITH_PTR(sdl_reload_audio_action, 1, &arg_audio);
 	CUE_EXPECT_CALLED_WITH_PTR(sdl_reload_audio_action, 2, arg_arg);
 	CUE_EXPECT_CALLED_WITH_PTR(sdl_reload_audio_action, 3, &arg_io_s);
+
+	CUE_ASSERT_EQ(arg_audio.started, 0);
 }
 
 SUITE_END(sdl_reload_audio_test);
