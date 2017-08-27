@@ -136,7 +136,4 @@ SUITE_CASE("stream to the end after last decode") {
 	CUE_ASSERT_EQ(arg_rframe.pkt_duration, 0);
 }
 
-SUITE_CASE("audio data too large") {
-}
-
 SUITE_END(ffmpeg_audio_decode_test);

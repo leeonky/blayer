@@ -93,9 +93,6 @@ static void guess_avg_duration(ffmpeg_decoder *decoder) {
 			}
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			/*if(codec_context->frame_size) {*/
-				/*decoder->_avg_duration = samples_to_duration(codec_context->frame_size, codec_context);*/
-			/*}*/
 			break;
 		default:
 			not_support_media_type(codec_context->codec_type);
