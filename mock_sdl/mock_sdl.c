@@ -20,6 +20,10 @@ mock_function_8(int, SDL_UpdateYUVTexture, SDL_Texture *, const SDL_Rect *, cons
 mock_function_4(int, SDL_RenderCopy, SDL_Renderer *, SDL_Texture *, const SDL_Rect *, const SDL_Rect *);
 mock_void_function_1(SDL_RenderPresent, SDL_Renderer *);
 
+mock_function_5(SDL_AudioDeviceID, SDL_OpenAudioDevice, const char *, int, const SDL_AudioSpec *, SDL_AudioSpec *, int);
+mock_void_function_1(SDL_CloseAudioDevice, SDL_AudioDeviceID);
+mock_function_2(const char *, SDL_GetAudioDeviceName, int, int);
+
 const char *SDL_GetError() {
 	return "sdl error";
 }

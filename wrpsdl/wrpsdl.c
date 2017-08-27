@@ -48,3 +48,30 @@ int sdl_present(sdl_window *window, const video_frames *vfs, uint8_t **datas, in
 		res = print_error(io_s->stderr);
 	return res;
 }
+
+/*int sdl_open_audio(int dev, int freq, int channels, SDL_AudioFormat format, void *arg, int(*action)(sdl_audio *, void *, io_stream *), io_stream *io_s) {*/
+	/*return 0;*/
+/*}*/
+
+int sdl_init_audio(int dev, void *arg, int(*action)(sdl_audio *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	if(!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+		sdl_audio audio = {
+			.device_name = SDL_GetAudioDeviceName(dev, 0),
+		};
+		if(audio.device_name) {
+			if(action)
+				res = action(&audio, arg, io_s);
+			if(audio.device_id)
+				SDL_CloseAudioDevice(audio.device_id);
+		} else {
+			res = -1;
+			fprintf(io_s->stderr, "Error[libwrpsdl]: get device name at [%d] failed\n", dev);
+			print_stack(io_s->stderr);
+		}
+		SDL_QuitSubSystem(SDL_INIT_AUDIO);
+	} else {
+		res = print_error(io_s->stderr);
+	}
+	return res;
+}
