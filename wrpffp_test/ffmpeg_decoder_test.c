@@ -434,7 +434,7 @@ SUITE_CASE("output audio") {
 	decoder.codec_context->channel_layout = 100;
 	decoder.samples_size = 4800;
 
-	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "AFS ch:8 rt:96000 fmt:3 buf:4800 lay:100");
+	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "AFS rt:96000 ch:8 fmt:3 buf:4800 lay:100");
 }
 
 SUITE_END(ffmpeg_output_decoded_format_test);
