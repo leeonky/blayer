@@ -93,9 +93,9 @@ static void guess_avg_duration(ffmpeg_decoder *decoder) {
 			}
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			if(codec_context->frame_size) {
-				decoder->_avg_duration = samples_to_duration(codec_context->frame_size, codec_context);
-			}
+			/*if(codec_context->frame_size) {*/
+				/*decoder->_avg_duration = samples_to_duration(codec_context->frame_size, codec_context);*/
+			/*}*/
 			break;
 		default:
 			not_support_media_type(codec_context->codec_type);
@@ -207,8 +207,8 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 
 static inline int output_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, AVFrame *avframe, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
+	frame->frame = avframe;
 	if(action) {
-		frame->frame = avframe;
 		res = action(decoder, frame, arg, io_s);
 	}
 	avframe->nb_samples = 0;
@@ -234,10 +234,10 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*action)(f
 				res = action(decoder, &fffrm, arg, io_s);
 				break;
 			case AVMEDIA_TYPE_AUDIO:
-				if(!rframe->nb_samples)
-					av_frame_set_best_effort_timestamp(rframe, av_frame_get_best_effort_timestamp(wframe));
 				if(rframe->nb_samples + wframe->nb_samples > decoder->samples_size)
 					res = output_frame(decoder, &fffrm, rframe, arg, action, io_s);
+				if(!rframe->nb_samples)
+					av_frame_set_best_effort_timestamp(rframe, av_frame_get_best_effort_timestamp(wframe));
 				av_samples_copy(rframe->data, wframe->data,
 						rframe->nb_samples, 0,
 						wframe->nb_samples,
