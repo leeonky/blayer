@@ -9,6 +9,7 @@ int main() {
 	ADD_SUITE(sdl_present_test);
 	ADD_SUITE(sdl_init_audio_test);
 	ADD_SUITE(sdl_reload_audio_test);
+	ADD_SUITE(sdl_play_audio_test);
 
 	return run_test();
 }
