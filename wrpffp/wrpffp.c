@@ -299,10 +299,11 @@ const char *ffmpeg_media_info(const ffmpeg_decoder *decoder) {
 					codec_context->pix_fmt);
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			sprintf(buffer, "AFS ch:%d rt:%d fmt:%d",
+			sprintf(buffer, "AFS ch:%d rt:%d fmt:%d buf:%d",
 					codec_context->channels,
 					codec_context->sample_rate,
-					codec_context->sample_fmt);
+					codec_context->sample_fmt,
+					decoder->samples_size);
 			break;
 		default:
 			not_support_media_type(codec_context->codec_type);

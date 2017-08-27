@@ -419,8 +419,9 @@ SUITE_CASE("output audio") {
 	decoder.codec_context->channels = 8;
 	decoder.codec_context->sample_rate = 96000;
 	decoder.codec_context->sample_fmt = 3;
+	decoder.samples_size = 4800;
 
-	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "AFS ch:8 rt:96000 fmt:3");
+	CUE_ASSERT_STRING_EQ(ffmpeg_media_info(&decoder), "AFS ch:8 rt:96000 fmt:3 buf:4800");
 }
 
 SUITE_END(ffmpeg_output_decoded_format_test);
