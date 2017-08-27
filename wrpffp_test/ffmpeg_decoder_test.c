@@ -45,6 +45,7 @@ BEFORE_EACH() {
 	init_mock_function(avcodec_free_context, NULL);
 	init_mock_function(av_frame_alloc, stub_av_frame_alloc);
 	init_mock_function(av_frame_free, NULL);
+	init_mock_function(av_samples_alloc, NULL);
 
 	stream.stream = &av_stream;
 
@@ -229,6 +230,49 @@ SUITE_CASE("AVCodecContext has samples size and more than sample_rate/10") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_ASSERT_EQ(int_arg, 100);
+}
+
+static int audio_decoder_assert3(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
+	int_arg = 100;
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_alloc);
+
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_alloc, 1, decoder->rframe->data);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_alloc, 2, decoder->rframe->linesize);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 3, 8);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 4, 800);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 5, 10);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 6, 1);
+
+	return 0;
+}
+
+SUITE_CASE("allacte memory for rframe") {
+	codec_context.codec_type = AVMEDIA_TYPE_AUDIO;
+	codec_context.channels = 8;
+	codec_context.sample_fmt = 10;
+	codec_context.sample_rate = 8000;
+	codec_context.frame_size = 0;
+	test_main = audio_decoder_assert3;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_ASSERT_EQ(int_arg, 100);
+}
+
+static int stub_av_samples_alloc_error(uint8_t **audio_data, int *linesize,
+		int nb_channels, int nb_samples, enum AVSampleFormat sample_fmt, int align) {
+	return -100;
+}
+
+SUITE_CASE("failed to allacte memory for rframe") {
+	init_mock_function(av_samples_alloc, stub_av_samples_alloc_error);
+	test_main = audio_decoder_assert3;
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -100\n");
+
+	CUE_ASSERT_EQ(int_arg, 0);
 }
 
 SUITE_END(ffmpeg_decoder_test);

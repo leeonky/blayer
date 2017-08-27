@@ -104,7 +104,7 @@ static void guess_avg_duration(ffmpeg_decoder *decoder) {
 }
 
 static int open_for_media(ffmpeg_decoder *decoder, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
-	int res = 0;
+	int res = 0, ret;
 	if((decoder->wframe = av_frame_alloc())) {
 		if((decoder->rframe = av_frame_alloc())) {
 			AVCodecContext *codec_context = decoder->codec_context;
@@ -118,9 +118,17 @@ static int open_for_media(ffmpeg_decoder *decoder, void *arg, int(*process)(ffmp
 				decoder->samples_size = codec_context->sample_rate/10;
 				if(codec_context->frame_size > decoder->samples_size)
 					decoder->samples_size = codec_context->frame_size;
-			}
-			if (process) {
-				res = process(decoder->stream, decoder, arg, io_s);
+				if((ret=av_samples_alloc(rframe->data, rframe->linesize, codec_context->channels, decoder->samples_size, codec_context->sample_fmt, 1))>=0) {
+					if (process) {
+						res = process(decoder->stream, decoder, arg, io_s);
+					}
+				} else {
+					res = print_error(ret, io_s->stderr);
+				}
+			} else {
+				if (process) {
+					res = process(decoder->stream, decoder, arg, io_s);
+				}
 			}
 			av_frame_free(&decoder->rframe);
 		} else {
