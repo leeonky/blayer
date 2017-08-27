@@ -116,9 +116,10 @@ static int open_for_media(ffmpeg_decoder *decoder, void *arg, int(*process)(ffmp
 				rframe->channel_layout = codec_context->channel_layout;
 				rframe->pkt_duration = 0;
 				decoder->samples_size = codec_context->sample_rate/10;
+				decoder->align = 1;
 				if(codec_context->frame_size > decoder->samples_size)
 					decoder->samples_size = codec_context->frame_size;
-				if((ret=av_samples_alloc(rframe->data, rframe->linesize, codec_context->channels, decoder->samples_size, codec_context->sample_fmt, 1))>=0) {
+				if((ret=av_samples_alloc(rframe->data, rframe->linesize, codec_context->channels, decoder->samples_size, codec_context->sample_fmt, decoder->align))>=0) {
 					if (process) {
 						res = process(decoder->stream, decoder, arg, io_s);
 					}
@@ -127,6 +128,7 @@ static int open_for_media(ffmpeg_decoder *decoder, void *arg, int(*process)(ffmp
 				}
 			} else {
 				if (process) {
+					decoder->align = 64;
 					res = process(decoder->stream, decoder, arg, io_s);
 				}
 			}
@@ -190,14 +192,14 @@ int ffmpeg_read_and_feed(ffmpeg_stream *stream, ffmpeg_decoder *decoder) {
 	return res;
 }
 
-int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
+int ffmpeg_decoded_size(ffmpeg_decoder *decoder) {
 	AVCodecContext *codec_context = decoder->codec_context;
 	switch(codec_context->codec_type) {
 		case AVMEDIA_TYPE_VIDEO:
-			return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, align);
+			return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, decoder->align);
 		case AVMEDIA_TYPE_AUDIO:
 			return av_samples_get_buffer_size(NULL, codec_context->channels,
-					decoder->samples_size, codec_context->sample_fmt, align!=0);
+					decoder->samples_size, codec_context->sample_fmt, decoder->align);
 		default:
 			not_support_media_type(codec_context->codec_type);
 			break;
@@ -216,12 +218,12 @@ static inline int output_frame(ffmpeg_decoder *decoder, ffmpeg_frame *frame, AVF
 	return res;
 }
 
-int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
+int ffmpeg_decode(ffmpeg_decoder *decoder, void *arg, int (*action)(ffmpeg_decoder *, ffmpeg_frame *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
 	ffmpeg_frame fffrm = {
 		.decoder = decoder,
 		.codec_type = decoder->codec_context->codec_type,
-		.align = align,
+		.align = decoder->align,
 	};
 	AVCodecContext *codec_context = decoder->codec_context;
 	AVFrame *wframe = decoder->wframe;

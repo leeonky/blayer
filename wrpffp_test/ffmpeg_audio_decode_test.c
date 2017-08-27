@@ -33,13 +33,14 @@ BEFORE_EACH() {
 	arg_decoder.codec_context = &arg_codec_context;
 	arg_decoder.rframe = &arg_rframe;
 	arg_decoder.wframe = &arg_wframe;
+	arg_decoder.align = 1;
 	arg_wframe.channels = 8;
 	arg_wframe.format = 2;
 	return 0;
 }
 
 SUBJECT(int) {
-	return ffmpeg_decode(&arg_decoder, arg_align, arg_arg, ffmpeg_decode_action, &io_s);
+	return ffmpeg_decode(&arg_decoder, arg_arg, ffmpeg_decode_action, &io_s);
 }
 
 SUITE_CASE("set rframe pts with wframe pts when first copy") {

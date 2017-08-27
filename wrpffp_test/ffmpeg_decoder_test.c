@@ -69,7 +69,15 @@ SUBJECT(int) {
 	return ffmpeg_open_decoder(&stream, &int_arg, test_main, &io_s);
 }
 
+static int video_decoder_assert(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
+	int_arg = 100;
+	CUE_ASSERT_EQ(decoder->align, 64);
+	return 10;
+}
+
 SUITE_CASE("should open and close stream's decoder; return process value") {
+	test_main = video_decoder_assert;
+
 	CUE_ASSERT_SUBJECT_FAILED_WITH(10);
 
 	CUE_EXPECT_CALLED_ONCE(avcodec_find_decoder);
@@ -244,6 +252,8 @@ static int audio_decoder_assert3(ffmpeg_stream *stream, ffmpeg_decoder *decoder,
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 5, 10);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_alloc, 6, 1);
 
+	CUE_ASSERT_EQ(decoder->align, 1);
+
 	return 0;
 }
 
@@ -287,9 +297,9 @@ static int stub_avcodec_receive_frame_got_frame(AVCodecContext *codec_context, A
 }
 
 BEFORE_EACH() {
-	arg_align = 32;
 	decoder.codec_context = &codec_context;
 	decoder.wframe = &frame;
+	decoder.align = 32;
 
 	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
 	codec_context.width = 1920;
@@ -313,13 +323,13 @@ static int process_frame(ffmpeg_decoder *d, ffmpeg_frame *f, void *arg, io_strea
 	*(int *)arg = 100;
 	CUE_ASSERT_PTR_EQ(f->frame, d->wframe);
 	CUE_ASSERT_EQ(f->codec_type, AVMEDIA_TYPE_VIDEO);
-	CUE_ASSERT_EQ(f->align, arg_align);
+	CUE_ASSERT_EQ(f->align, d->align);
 	return 0;
 }
 
 SUBJECT(int) {
 	io_stream io_s = { actxt.input_stream, actxt.output_stream, actxt.error_stream };
-	return ffmpeg_decode(&decoder, arg_align, &int_arg, process_frame, &io_s);
+	return ffmpeg_decode(&decoder, &int_arg, process_frame, &io_s);
 }
 
 SUITE_CASE("decode video to frame and invoke process") {
@@ -366,14 +376,15 @@ SUITE_CASE("get frame buffer size for video") {
 	codec_context.height = 1080;
 	codec_context.pix_fmt = AV_PIX_FMT_YUVA420P10BE;
 	init_mock_function(av_image_get_buffer_size, stub_av_image_get_buffer_size);
+	decoder.align = 8;
 
-	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder, arg_align), 100);
+	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder), 100);
 
 	CUE_EXPECT_CALLED_ONCE(av_image_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 1, AV_PIX_FMT_YUVA420P10BE);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 2, 1920);
 	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 3, 1080);
-	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, arg_align);
+	CUE_EXPECT_CALLED_WITH_INT(av_image_get_buffer_size, 4, decoder.align);
 }
 
 static int stub_av_samples_get_buffer_size(int *lines, int channels, int samples, enum AVSampleFormat format, int align) {
@@ -386,15 +397,16 @@ SUITE_CASE("get frame buffer size for audio") {
 	codec_context.sample_fmt = AV_SAMPLE_FMT_S64;
 	decoder.samples_size = 128;
 	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
+	decoder.align = 1;
 
-	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder, arg_align), 1000);
+	CUE_ASSERT_EQ(ffmpeg_decoded_size(&decoder), 1000);
 
 	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 8);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 128);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_S64);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 1);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, decoder.align);
 }
 
 SUITE_END(ffmpeg_decoded_size_test);

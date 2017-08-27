@@ -56,15 +56,15 @@ static int cbuf_allocated(shm_cbuf *cbuf, void *arg, io_stream *io_s) {
 	ffmpeg_decoder *decoder = context->decoder;
 
 	while(!ffmpeg_read_and_feed(context->stream, decoder)) {
-		ffmpeg_decode(decoder, 1, arg, process_decoded_frame, io_s);
+		ffmpeg_decode(decoder, arg, process_decoded_frame, io_s);
 	}
-	while(!ffmpeg_decode(decoder, 1, arg, process_decoded_frame, io_s));
+	while(!ffmpeg_decode(decoder, arg, process_decoded_frame, io_s));
 	return 0;
 }
 
 static int decoder_opened(ffmpeg_stream *stream, ffmpeg_decoder *decoder, void *arg, io_stream *io_s) {
 	((app_context *)arg)->decoder = decoder;
-	return shrb_new(((app_context *)arg)->args->buffer_bits, ffmpeg_decoded_size(decoder, 1), arg, cbuf_allocated, io_s);
+	return shrb_new(((app_context *)arg)->args->buffer_bits, ffmpeg_decoded_size(decoder), arg, cbuf_allocated, io_s);
 }
 
 static int stream_opened(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
@@ -78,7 +78,7 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 
 	if(!process_args(&args, argc, argv, stderr)) {
 		io_stream io_s = {stdin, stdout, stderr};
-		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_AUDIO, args.track_index, &context, stream_opened, &io_s);
+		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.track_index, &context, stream_opened, &io_s);
 	}
 	return -1;
 }
