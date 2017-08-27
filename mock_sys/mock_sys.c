@@ -19,3 +19,5 @@ mock_function_1(int, sem_unlink_with_ppid, int);
 
 mock_function_0(int64_t, usectime);
 mock_function_1(int, usleep, useconds_t);
+
+mock_function_3(void *, memcpy, void *, const void *, size_t);

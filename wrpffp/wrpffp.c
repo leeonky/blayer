@@ -337,11 +337,7 @@ int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, io_stream *io
 				res = print_error(ret, io_s->stderr);
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			{
-				uint8_t *dst_bufs[] = {buf};
-				if((ret=av_samples_copy(dst_bufs, avframe->data, 0, 0, avframe->nb_samples, avframe->channels, avframe->format))<0)
-					res = print_error(ret, io_s->stderr);
-			}
+			memcpy(buf, avframe->data[0], av_samples_get_buffer_size(NULL, avframe->channels, frame->decoder->samples_size, avframe->format, frame->align));
 			break;
 		default:
 			not_support_media_type(frame->codec_type);

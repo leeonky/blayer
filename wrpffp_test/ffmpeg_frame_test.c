@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <cunitexd.h>
 #include "mock_ffmpeg/mock_ffmpeg.h"
+#include "mock_sys/mock_sys.h"
 #include "wrpffp/wrpffp.h"
 #include "iob/iob.h"
 #include "iob/vfs.h"
@@ -39,6 +40,7 @@ SUITE_CASE("ffmpeg_frame_copy for video") {
 	avframe.width = 1080;
 	avframe.height = 640;
 	avframe.format = AV_PIX_FMT_NV12;
+	arg_fframe.decoder = &decoder;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
@@ -72,35 +74,33 @@ static int stub_av_samples_copy_assert(uint8_t **dst, uint8_t * const *src, int 
 	return 0;
 }
 
-SUITE_CASE("copy for audio") {
+static int stub_av_samples_get_buffer_size(int *lines, int channels, int samples, enum AVSampleFormat format, int align) {
+	return 1000;
+}
+
+SUITE_CASE("copy for audio, depents on decoder samples_size, channels, format") {
 	arg_fframe.codec_type = AVMEDIA_TYPE_AUDIO;
-	avframe.nb_samples = 100;
+	arg_fframe.align = 10;
 	avframe.format = AV_SAMPLE_FMT_DBL;
 	avframe.channels = 7;
+	decoder.samples_size = 128;
 
-	init_mock_function(av_samples_copy, stub_av_samples_copy_assert);
+	init_mock_function(memcpy, NULL);
+	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_EXPECT_CALLED_ONCE(av_samples_copy);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 3, 0);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 4, 0);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 5, 100);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 6, 7);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 7, AV_SAMPLE_FMT_DBL);
-}
+	CUE_EXPECT_CALLED_ONCE(memcpy);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 1, frame_buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 2, avframe.data[0]);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 3, 1000);
 
-static int stub_av_samples_copy_failed(uint8_t **dst, uint8_t * const *src, int dst_of, int src_of, int nb_samples, int nb_channels, enum AVSampleFormat format) {
-	return -100;
-}
-
-SUITE_CASE("failed to copy") {
-	arg_fframe.codec_type = AVMEDIA_TYPE_AUDIO;
-	init_mock_function(av_samples_copy, stub_av_samples_copy_failed);
-
-	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-
-	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -100\n");
+	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 7);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 128);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_DBL);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 10);
 }
 
 SUITE_END(ffmpeg_frame_copy_test);

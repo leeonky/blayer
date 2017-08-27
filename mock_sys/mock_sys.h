@@ -4,6 +4,7 @@
 #include <cunitexd.h>
 #include <sys/shm.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 extern_mock_function_3(int, shmget, key_t, size_t, int);
 extern_mock_function_3(void *, shmat, int, const void *, int);
@@ -22,5 +23,7 @@ extern_mock_function_1(int, sem_close, sem_t *);
 extern_mock_function_1(int, sem_unlink_with_ppid, int);
 extern_mock_function_0(int64_t, usectime);
 extern_mock_function_1(int, usleep, useconds_t);
+
+extern_mock_function_3(void *, memcpy, void *, const void *, size_t);
 
 #endif
