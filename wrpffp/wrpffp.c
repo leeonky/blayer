@@ -103,6 +103,38 @@ static void guess_avg_duration(ffmpeg_decoder *decoder) {
 	}
 }
 
+static int open_for_media(ffmpeg_decoder *decoder, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
+	int res = 0;
+	if((decoder->wframe = av_frame_alloc())) {
+		if((decoder->rframe = av_frame_alloc())) {
+			AVCodecContext *codec_context = decoder->codec_context;
+			AVFrame *rframe = decoder->rframe;
+			if(AVMEDIA_TYPE_AUDIO == codec_context->codec_type) {
+				rframe->channels = codec_context->channels;
+				rframe->format =  codec_context->sample_fmt;
+				rframe->sample_rate = codec_context->sample_rate;
+				rframe->channel_layout = codec_context->channel_layout;
+				rframe->pkt_duration = 0;
+				decoder->samples_size = codec_context->sample_rate/10;
+				if(codec_context->frame_size > decoder->samples_size)
+					decoder->samples_size = codec_context->frame_size;
+			}
+			if (process) {
+				res = process(decoder->stream, decoder, arg, io_s);
+			}
+			av_frame_free(&decoder->rframe);
+		} else {
+			res = -1;
+			fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
+		}
+		av_frame_free(&decoder->wframe);
+	} else {
+		res = -1;
+		fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
+	}
+	return res;
+}
+
 int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_stream *, ffmpeg_decoder *, void *, io_stream *) , io_stream *io_s) {
 	int res = 0, ret;
 	AVCodec *codec;
@@ -114,21 +146,7 @@ int ffmpeg_open_decoder(ffmpeg_stream *stream, void *arg, int(*process)(ffmpeg_s
 			if ((ret=avcodec_parameters_to_context(decoder.codec_context, stream->stream->codecpar)) >= 0
 					&& (!(ret=avcodec_open2(decoder.codec_context, codec, NULL)))) {
 				guess_avg_duration(&decoder);
-				if((decoder.wframe = av_frame_alloc())) {
-					if((decoder.rframe = av_frame_alloc())) {
-						if (process) {
-							res = process(stream, &decoder, arg, io_s);
-						}
-						av_frame_free(&decoder.rframe);
-					} else {
-						res = -1;
-						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
-					}
-					av_frame_free(&decoder.wframe);
-				} else {
-					res = -1;
-					fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc AVFrame\n");
-				}
+				res = open_for_media(&decoder, arg, process, io_s);
 				avcodec_close(decoder.codec_context);
 			} else {
 				res = print_error(ret, io_s->stderr);
@@ -171,8 +189,7 @@ int ffmpeg_decoded_size(ffmpeg_decoder *decoder, int align) {
 			return av_image_get_buffer_size(codec_context->pix_fmt, codec_context->width, codec_context->height, align);
 		case AVMEDIA_TYPE_AUDIO:
 			return av_samples_get_buffer_size(NULL, codec_context->channels,
-					codec_context->frame_size ? codec_context->frame_size : codec_context->sample_rate/10,
-					codec_context->sample_fmt, align!=0);
+					decoder->samples_size, codec_context->sample_fmt, align!=0);
 		default:
 			not_support_media_type(codec_context->codec_type);
 			break;
