@@ -49,10 +49,6 @@ int sdl_present(sdl_window *window, const video_frames *vfs, uint8_t **datas, in
 	return res;
 }
 
-/*int sdl_open_audio(int dev, int freq, int channels, SDL_AudioFormat format, void *arg, int(*action)(sdl_audio *, void *, io_stream *), io_stream *io_s) {*/
-	/*return 0;*/
-/*}*/
-
 int sdl_init_audio(int dev, void *arg, int(*action)(sdl_audio *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	if(!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
@@ -73,5 +69,44 @@ int sdl_init_audio(int dev, void *arg, int(*action)(sdl_audio *, void *, io_stre
 	} else {
 		res = print_error(io_s->stderr);
 	}
+	return res;
+}
+
+static int is_same_audio(sdl_audio *audio, const SDL_AudioSpec *desired) {
+	return audio->freq==desired->freq && audio->channels==desired->channels && audio->format==desired->format;
+}
+
+static int not_meet_desired(const SDL_AudioSpec *desired, const SDL_AudioSpec *obtained) {
+	return desired->freq != obtained->freq || desired->channels != obtained->channels || desired->format != obtained->format;
+}
+
+int sdl_reload_audio(sdl_audio *audio, int freq, int channels, SDL_AudioFormat format, void *arg, int(*action)(sdl_audio *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	SDL_AudioSpec obtained = {};
+	SDL_AudioSpec desired = {
+		.freq = freq,
+		.channels = channels,
+		.format = format,
+	};
+
+	if(audio->device_id) {
+		if(is_same_audio(audio, &desired)) {
+			if(action)
+				res = action(audio, arg, io_s);
+			return res;
+		} else
+			SDL_CloseAudioDevice(audio->device_id);
+	}
+
+	if(audio->device_id = SDL_OpenAudioDevice(audio->device_name, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE)) {
+		audio->freq = freq;
+		audio->channels = channels;
+		audio->format = format;
+		if(not_meet_desired(&desired, &obtained))
+			fprintf(io_s->stderr, "Warning[libwrpsdl]: not support [%d %d %d] on device [%s]\n", freq, channels, format, audio->device_name);
+		if(action)
+			res = action(audio, arg, io_s);
+	} else
+		res = print_error(io_s->stderr);
 	return res;
 }
