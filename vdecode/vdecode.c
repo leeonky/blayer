@@ -78,7 +78,7 @@ int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 
 	if(!process_args(&args, argc, argv, stderr)) {
 		io_stream io_s = {stdin, stdout, stderr};
-		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_VIDEO, args.track_index, &context, stream_opened, &io_s);
+		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_AUDIO, args.track_index, &context, stream_opened, &io_s);
 	}
 	return -1;
 }

@@ -209,6 +209,8 @@ int ffmpeg_decode(ffmpeg_decoder *decoder, int align, void *arg, int (*action)(f
 				res = action(decoder, &fffrm, arg, io_s);
 				break;
 			case AVMEDIA_TYPE_AUDIO:
+				if(!rframe->nb_samples)
+					av_frame_set_best_effort_timestamp(rframe, av_frame_get_best_effort_timestamp(wframe));
 				if(rframe->nb_samples + wframe->nb_samples > decoder->samples_size)
 					res = output_frame(decoder, &fffrm, rframe, arg, action, io_s);
 				av_samples_copy(rframe->data, wframe->data,
