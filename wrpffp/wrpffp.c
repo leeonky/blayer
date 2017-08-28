@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include "wrpffp.h"
 
 static inline void unsupported_operation(const char *fun, enum AVMediaType t) {
@@ -298,7 +299,7 @@ const char *ffmpeg_media_info(const ffmpeg_decoder *decoder) {
 					codec_context->pix_fmt);
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			sprintf(buffer, "AFS rt:%d ch:%d fmt:%d buf:%d lay:%d",
+			sprintf(buffer, "AFS rt:%d ch:%d fmt:%d buf:%d lay:%"PRIu64,
 					codec_context->sample_rate,
 					codec_context->channels,
 					codec_context->sample_fmt,
@@ -317,10 +318,10 @@ const char *ffmpeg_frame_info(const ffmpeg_frame *frame) {
 	static __thread char buffer[1024];
 	switch(frame->codec_type) {
 		case AVMEDIA_TYPE_VIDEO:
-			sprintf(buffer, "%lld", ffmpeg_frame_present_timestamp(frame));
+			sprintf(buffer, PRId64, ffmpeg_frame_present_timestamp(frame));
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			sprintf(buffer, "%lld,%d", ffmpeg_frame_present_timestamp(frame), frame->frame->nb_samples);
+			sprintf(buffer, PRId64",%d", ffmpeg_frame_present_timestamp(frame), frame->frame->nb_samples);
 			break;
 		default:
 			not_support_media_type(frame->codec_type);

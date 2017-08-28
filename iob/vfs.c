@@ -1,13 +1,14 @@
 #include <string.h>
+#include <inttypes.h>
 #include "iob.h"
 #include "vfs.h"
 #include "sys/sys.h"
 
 static int parse_frames_in_stream(FILE *frames_stream, void *arg) {
 	video_frames *frames = (video_frames *)arg;
-	if(2==fscanf(frames_stream, "frames:%d=>%lld", &frames->frames[0].index, &frames->frames[0].pts)) {
+	if(2==fscanf(frames_stream, "frames:%d=>%"PRId64, &frames->frames[0].index, &frames->frames[0].pts)) {
 		frames->count = 1;
-		while(frames->count<MAX_VIDEO_FRAMES_SIZE && 2==fscanf(frames_stream, ",%d=>%lld", &frames->frames[frames->count].index, &frames->frames[frames->count].pts))
+		while(frames->count<MAX_VIDEO_FRAMES_SIZE && 2==fscanf(frames_stream, ",%d=>%"PRId64, &frames->frames[frames->count].index, &frames->frames[frames->count].pts))
 			frames->count++;
 		return 0;
 	}
@@ -54,12 +55,12 @@ int iob_add_video_frames_handler(io_bus *iob, const iob_video_frames_handler *ha
 }
 
 void output_append_frame(const video_frame_index *frm, FILE *out) {
-	fprintf(out, ",%d=>%lld", frm->index, frm->pts);
+	fprintf(out, ",%d=>%"PRId64, frm->index, frm->pts);
 }
 
 void output_video_frames(const video_frames *frames, FILE *out) {
 	int count;
-	fprintf(out, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d frames:%d=>%lld", frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts);
+	fprintf(out, "VFS w:%d h:%d fmt:%d align:%d cbuf:%d bits:%d size:%d frames:%d=>%"PRId64, frames->width, frames->height, frames->format, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts);
 
 	for(count=1; count<frames->count; ++count)
 		output_append_frame(&frames->frames[count], out);

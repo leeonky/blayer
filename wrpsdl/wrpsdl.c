@@ -100,7 +100,7 @@ int sdl_reload_audio(sdl_audio *audio, int freq, int channels, SDL_AudioFormat f
 		}
 	}
 
-	if(audio->device_id = SDL_OpenAudioDevice(audio->device_name, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE)) {
+	if((audio->device_id = SDL_OpenAudioDevice(audio->device_name, 0, &desired, &obtained, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE))) {
 		audio->freq = freq;
 		audio->channels = channels;
 		audio->format = format;

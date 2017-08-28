@@ -1,13 +1,14 @@
 #include <string.h>
+#include <inttypes.h>
 #include "iob.h"
 #include "afs.h"
 #include "sys/sys.h"
 
 static int parse_frames_in_stream(FILE *frames_stream, void *arg) {
 	audio_frames *frames = (audio_frames *)arg;
-	if(3==fscanf(frames_stream, "frames:%d=>%lld,%d", &frames->frames[0].index, &frames->frames[0].pts, &frames->frames[0].samples_size)) {
+	if(3==fscanf(frames_stream, "frames:%d=>%"PRId64",%d", &frames->frames[0].index, &frames->frames[0].pts, &frames->frames[0].samples_size)) {
 		frames->count = 1;
-		while(frames->count<MAX_AUDIO_FRAMES_SIZE && 3==fscanf(frames_stream, ",%d=>%lld,%d", &frames->frames[frames->count].index, &frames->frames[frames->count].pts, &frames->frames[frames->count].samples_size))
+		while(frames->count<MAX_AUDIO_FRAMES_SIZE && 3==fscanf(frames_stream, ",%d=>%"PRId64",%d", &frames->frames[frames->count].index, &frames->frames[frames->count].pts, &frames->frames[frames->count].samples_size))
 			frames->count++;
 		return 0;
 	}

@@ -18,6 +18,29 @@ typedef struct app_context {
 
 /*static mclock mclk;*/
 
+static SDL_AudioFormat parse_format(enum AVSampleFormat format) {
+	switch(format) {
+		case AV_SAMPLE_FMT_U8:
+			return AUDIO_U8;
+		case AV_SAMPLE_FMT_S16:
+			return AUDIO_S16;
+		case AV_SAMPLE_FMT_S32:
+			return AUDIO_S32;
+		case AV_SAMPLE_FMT_FLT:
+			return AUDIO_F32;
+		case AV_SAMPLE_FMT_DBL:
+		case AV_SAMPLE_FMT_U8P:
+		case AV_SAMPLE_FMT_S16P:
+		case AV_SAMPLE_FMT_S32P:
+		case AV_SAMPLE_FMT_FLTP:
+		case AV_SAMPLE_FMT_DBLP:
+		case AV_SAMPLE_FMT_S64:
+		case AV_SAMPLE_FMT_S64P:
+		default:
+			return 0;
+	}
+}
+
 static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
 	const audio_frames *afs = context_arg->frames;
@@ -47,7 +70,7 @@ static int audio_reloaded(sdl_audio *audio, void *arg, io_stream *io_s) {
 static void audio_frames_action(const audio_frames *afs, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
 	context_arg->frames = afs;
-	sdl_reload_audio(context_arg->audio, afs->sample_rate, afs->channels, afs->format, arg, audio_reloaded, io_s);
+	sdl_reload_audio(context_arg->audio, afs->sample_rate, afs->channels, parse_format(afs->format), arg, audio_reloaded, io_s);
 }
 
 static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
