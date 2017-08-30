@@ -53,11 +53,15 @@ const char *shrb_info(shm_cbuf *);
 void print_stack(FILE *);
 
 typedef struct mclock {
-	int64_t base, base_offset;
+	int64_t base, offset;
 } mclock;
 
 void mclk_init(mclock *);
 
 int mclk_waiting(const mclock *, int64_t, int64_t);
+
+void mclk_adjust(mclock *, int64_t);
+
+void mclk_sync(mclock *, int64_t, int64_t);
 
 #endif

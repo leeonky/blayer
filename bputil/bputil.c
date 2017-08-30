@@ -202,12 +202,12 @@ void print_stack(FILE *f) {
 }
 
 void mclk_init(mclock *mclk) {
-	mclk->base_offset = 0;
+	mclk->offset = 0;
 	mclk->base = usectime();
 }
 
 int mclk_waiting(const mclock *mclk, int64_t target, int64_t period) {
-	int64_t sl = target - mclk->base_offset - (usectime() - mclk->base);
+	int64_t sl = target - mclk->offset - (usectime() - mclk->base);
 	if(sl<0)
 		return -1;
 	if(sl>period)
@@ -215,4 +215,9 @@ int mclk_waiting(const mclock *mclk, int64_t target, int64_t period) {
 	else if(sl)
 		usleep(sl);
 	return 0;
+}
+
+void mclk_sync(mclock *mclk, int64_t base, int64_t offset) {
+	mclk->offset = offset;
+	mclk->base = base;
 }

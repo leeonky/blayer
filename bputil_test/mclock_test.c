@@ -27,7 +27,7 @@ SUITE_CASE("init clock with current clock") {
 	CUE_EXPECT_CALLED_ONCE(usectime);
 
 	CUE_ASSERT_EQ(mclk.base, arg_usec);
-	CUE_ASSERT_EQ(mclk.base_offset, 0);
+	CUE_ASSERT_EQ(mclk.offset, 0);
 }
 
 SUITE_CASE("wait for present in right second") {
@@ -66,6 +66,15 @@ SUITE_CASE("if too long time to wait, just wait period") {
 
 	CUE_EXPECT_CALLED_ONCE(usleep);
 	CUE_EXPECT_CALLED_WITH_INT(usleep, 1, 39);
+}
+
+SUITE_CASE("sync clock") {
+	mclock mclk = {};
+
+	mclk_sync(&mclk, 1000, 200);
+
+	CUE_ASSERT_EQ(mclk.base, 1000);
+	CUE_ASSERT_EQ(mclk.offset, 200);
 }
 
 SUITE_END(mclock_test)
