@@ -64,7 +64,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 static int audio_reloaded(sdl_audio *audio, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
 	const audio_frames *afs = context_arg->frames;
-	shrb_reload(context_arg->cbuf, afs->cbuf_id, afs->cbuf_bits, afs->cbuf_size, arg, process_frame, io_s);
+	return shrb_reload(context_arg->cbuf, afs->cbuf_id, afs->cbuf_bits, afs->cbuf_size, arg, process_frame, io_s);
 }
 
 static void audio_frames_action(const audio_frames *afs, void *arg, io_stream *io_s) {
