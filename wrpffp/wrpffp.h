@@ -66,5 +66,8 @@ extern int ffmpeg_create_frame(void *, int (*)(ffmpeg_frame *, void *, io_stream
 
 extern int ffmpeg_load_image(ffmpeg_frame *, const video_frames *, void *, io_stream *);
 
+#define ffmpeg_frame_data(frame) (frame)->frame->data
+#define ffmpeg_frame_linesize(frame) (frame)->frame->linesize
+
 #endif
 

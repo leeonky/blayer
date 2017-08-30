@@ -14,7 +14,7 @@ typedef struct sdl_window {
 
 extern int sdl_open_window(const char *, int, int, int, int, Uint32, void *, int(*)(sdl_window *, void *, io_stream *), io_stream *);
 
-extern int sdl_present(sdl_window *, const video_frames *, uint8_t **, int *, io_stream *);
+extern int sdl_present(sdl_window *, uint8_t **, int *, io_stream *);
 
 typedef struct sdl_audio {
 	const char *device_name;

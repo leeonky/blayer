@@ -14,7 +14,6 @@ SUITE_START("sdl_present_test");
 static SDL_Renderer *arg_renderer;
 static SDL_Texture *arg_texture;
 static sdl_window arg_window;
-static video_frames arg_vfs;
 static uint8_t *arg_datas[3];
 static int arg_lines[3];
 static io_stream arg_io_s;
@@ -26,10 +25,6 @@ BEFORE_EACH() {
 	arg_texture = (SDL_Texture *)&arg_texture;
 	arg_window.renderer = arg_renderer;
 	arg_window.texture = arg_texture;
-	arg_vfs.width = 1920;
-	arg_vfs.height = 1080;
-	arg_vfs.format = 10;
-	arg_vfs.align = 1;
 
 	arg_lines[0] = arg_line_0 = 100;
 	arg_lines[1] = arg_line_1 = 50;
@@ -55,7 +50,7 @@ AFTER_EACH() {
 }
 
 SUBJECT(int) {
-	return sdl_present(&arg_window, &arg_vfs, arg_datas, arg_lines, &arg_io_s);
+	return sdl_present(&arg_window, arg_datas, arg_lines, &arg_io_s);
 }
 
 SUITE_CASE("present video frame with index") {

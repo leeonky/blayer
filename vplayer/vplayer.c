@@ -27,7 +27,7 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	for(i=0; i<vfs->count; ++i) {
 		if(!ffmpeg_load_image(frame, vfs, shrb_get(cb, vfs->frames[i].index), io_s)) {
 			if(!mclk_waiting(&mclk, vfs->frames[i].pts, 300000))
-				sdl_present(context_arg->window, vfs, frame->frame->data, frame->frame->linesize, io_s);
+				sdl_present(context_arg->window, ffmpeg_frame_data(frame), ffmpeg_frame_linesize(frame), io_s);
 			else
 				fprintf(io_s->stderr, "Error[vplayer]: skip frame\n");
 		}
