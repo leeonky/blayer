@@ -100,7 +100,7 @@ SUITE_CASE("sound card does not meet specifation") {
 
 	CUE_EXPECT_CALLED_ONCE(sdl_reload_audio_action);
 
-	CUE_ASSERT_STDERR_EQ("Warning[libwrpsdl]: not support [44100 8 100] on device [hdmi]\n");
+	CUE_ASSERT_STDERR_EQ("Warning[libwrpsdl]: not support [44100 8 100] on device [hdmi] got [0 0 0]\n");
 }
 
 static int stub_SDL_OpenAudioDevice_failed(const char *device, int iscapture, const SDL_AudioSpec *desired, SDL_AudioSpec *obtained, int allowed_changes) {

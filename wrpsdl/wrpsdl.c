@@ -105,7 +105,7 @@ int sdl_reload_audio(sdl_audio *audio, int freq, int channels, SDL_AudioFormat f
 		audio->channels = channels;
 		audio->format = format;
 		if(not_meet_desired(&desired, &obtained))
-			fprintf(io_s->stderr, "Warning[libwrpsdl]: not support [%d %d %d] on device [%s]\n", freq, channels, format, audio->device_name);
+			fprintf(io_s->stderr, "Warning[libwrpsdl]: not support [%d %d %d] on device [%s] got [%d %d %d]\n", freq, channels, format, audio->device_name, obtained.freq, obtained.channels, obtained.format);
 		if(action)
 			res = action(audio, arg, io_s);
 	} else

@@ -18,7 +18,7 @@ typedef struct app_context {
 
 /*static mclock mclk;*/
 
-static SDL_AudioFormat parse_format(enum AVSampleFormat format) {
+static SDL_AudioFormat parse_format(enum AVSampleFormat format, io_stream *io_s) {
 	switch(format) {
 		case AV_SAMPLE_FMT_U8:
 			return AUDIO_U8;
@@ -37,6 +37,7 @@ static SDL_AudioFormat parse_format(enum AVSampleFormat format) {
 		case AV_SAMPLE_FMT_S64:
 		case AV_SAMPLE_FMT_S64P:
 		default:
+			fprintf(io_s->stderr, "Warning[aplayer]: Unsupport sample format: %d\n", format);
 			return 0;
 	}
 }
@@ -50,12 +51,6 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	for(i=0; i<afs->count; ++i) {
 		int size = av_samples_get_buffer_size(NULL, afs->channels, afs->frames[i].samples_size, afs->format, afs->align);
 		sdl_play_audio(context_arg->audio, shrb_get(cb, afs->frames[i].index), size);
-		/*if(!ffmpeg_load_image(frame, afs, shrb_get(cb, afs->frames[i].index), io_s)) {*/
-			/*if(!mclk_waiting(&mclk, afs->frames[i].pts, 300000))*/
-				/*sdl_present(context_arg->window, afs, frame->frame->data, frame->frame->linesize, io_s);*/
-			/*else*/
-				/*fprintf(io_s->stderr, "Error[aplayer]: skip frame\n");*/
-		/*}*/
 		shrb_free(cb);
 	}
 	return 0;
@@ -70,7 +65,7 @@ static int audio_reloaded(sdl_audio *audio, void *arg, io_stream *io_s) {
 static void audio_frames_action(const audio_frames *afs, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
 	context_arg->frames = afs;
-	sdl_reload_audio(context_arg->audio, afs->sample_rate, afs->channels, parse_format(afs->format), arg, audio_reloaded, io_s);
+	sdl_reload_audio(context_arg->audio, afs->sample_rate, afs->channels, parse_format(afs->format, io_s), arg, audio_reloaded, io_s);
 }
 
 static int setup_frames_event(io_bus *iob, void *arg, io_stream *io_s) {
