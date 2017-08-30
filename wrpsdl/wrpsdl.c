@@ -120,3 +120,21 @@ int sdl_play_audio(sdl_audio *audio, const void *buffer, size_t buffer_len) {
 	}
 	return SDL_QueueAudio(audio->device_id, buffer, buffer_len);
 }
+
+void sdl_audio_clock(sdl_audio *audio, int64_t pts, io_stream *io_s) {
+	int64_t left_samples = SDL_GetQueuedAudioSize(audio->device_id)/(audio->channels*(SDL_AUDIO_BITSIZE(audio->format)>>3));
+	pts -= left_samples * 1000000 / audio->freq;
+	fprintf(io_s->stdout, "CLK base:%"PRId64" offset:%"PRId64"\n", usectime(), pts);
+}
+
+int sdl_audio_waiting(sdl_audio *audio, int64_t waiting) {
+	int64_t left = SDL_GetQueuedAudioSize(audio->device_id)/(audio->channels*(SDL_AUDIO_BITSIZE(audio->format)>>3));
+	left = left * 1000000 / audio->freq;
+	if(left > waiting) {
+		usleep(left-waiting);
+		return 0;
+	}
+	return -1;
+}
+
+

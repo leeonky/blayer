@@ -26,6 +26,8 @@ mock_function_2(const char *, SDL_GetAudioDeviceName, int, int);
 mock_void_function_2(SDL_PauseAudioDevice, SDL_AudioDeviceID, int);
 mock_function_3(int, SDL_QueueAudio, SDL_AudioDeviceID, const void *, Uint32);
 
+mock_function_1(Uint32, SDL_GetQueuedAudioSize, SDL_AudioDeviceID);
+
 const char *SDL_GetError() {
 	return "sdl error";
 }

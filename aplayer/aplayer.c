@@ -53,9 +53,6 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 			sdl_play_audio(context_arg->audio, ffmpeg_frame_data(frame)[0], ffmpeg_frame_linesize(frame)[0]);
 			usleep(50000);
 		}
-		/*int size = av_samples_get_buffer_size(NULL, afs->channels, afs->frames[i].samples_size, afs->format, afs->align);*/
-		/*sdl_play_audio(context_arg->audio, shrb_get(cb, afs->frames[i].index), size);*/
-		/*usleep(50000);*/
 		shrb_free(cb);
 	}
 	return 0;

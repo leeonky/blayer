@@ -18,7 +18,6 @@ int main() {
 	ADD_SUITE(ffmpeg_load_image_test);
 	ADD_SUITE(ffmpeg_load_audio_test);
 	ADD_SUITE(ffmpeg_audio_decode_test);
-	ADD_SUITE(ffmpeg_audio_clock_test);
 
 	return run_test();
 }

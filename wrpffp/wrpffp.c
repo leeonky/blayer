@@ -383,3 +383,4 @@ int ffmpeg_load_audio(ffmpeg_frame *frame, const audio_frames *afs, int samples,
 		res = print_error(ret, io_s->stderr);
 	return res;
 }
+
