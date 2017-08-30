@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cunitexd.h>
-#include "vdecode/vdecode.h"
+#include "decoder/decoder.h"
 
-static vdecode_args args;
+static decoder_args args;
 
-SUITE_START("vdecode_args");
+SUITE_START("decoder_args");
 
 BEFORE_EACH() {
 	return init_subject("");
@@ -21,7 +21,7 @@ SUBJECT(int) {
 
 SUITE_CASE("should got error message when invalid arguments") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
-	CUE_ASSERT_STDERR_EQ("Error[vdecode]: require video file\n");
+	CUE_ASSERT_STDERR_EQ("Error[decoder]: require media file\n");
 }
 
 SUITE_CASE("should got file name when only set video file") {
@@ -70,4 +70,4 @@ SUITE_CASE("can set cbuf bits") {
 	CUE_ASSERT_EQ(args.buffer_bits, 3);
 }
 
-SUITE_END(test_vdecode_args);
+SUITE_END(test_decoder_args);

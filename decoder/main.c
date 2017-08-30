@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "vdecode.h"
+#include "decoder.h"
 
 int main(int argc, char ** argv) {
-	return vdecode_main(argc, argv, stdin, stdout, stderr);
+	return decoder_main(argc, argv, stdin, stdout, stderr);
 }
 

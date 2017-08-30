@@ -1,17 +1,17 @@
 #include <libavformat/avformat.h>
 #include <getopt.h>
-#include "vdecode.h"
+#include "decoder.h"
 #include "wrpffp/wrpffp.h"
 #include "bputil/bputil.h"
 
 typedef struct app_context {
-	vdecode_args *args;
+	decoder_args *args;
 	ffmpeg_stream *stream;
 	ffmpeg_decoder *decoder;
 	shm_cbuf *cbuf;
 } app_context;
 
-int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
+int process_args(decoder_args *args, int argc, char **argv, FILE *stderr) {
 	args->file_name = NULL;
 	args->track_index = -1;
 	args->buffer_bits = 4;
@@ -35,7 +35,7 @@ int process_args(vdecode_args *args, int argc, char **argv, FILE *stderr) {
 	if(optind < argc)
 		args->file_name = argv[optind++];
 	if(!args->file_name) {
-		fprintf(stderr, "Error[vdecode]: require media file\n");
+		fprintf(stderr, "Error[decoder]: require media file\n");
 		return -1;
 	}
 	return 0;
@@ -72,8 +72,8 @@ static int stream_opened(ffmpeg_stream *stream, void *arg, io_stream *io_s) {
 	return ffmpeg_open_decoder(stream, arg, decoder_opened, io_s);
 }
 
-int vdecode_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
-	vdecode_args args;
+int decoder_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr) {
+	decoder_args args;
 	app_context context = {&args};
 
 	if(!process_args(&args, argc, argv, stderr)) {

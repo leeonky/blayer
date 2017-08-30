@@ -5,8 +5,8 @@
 int main() {
 	init_test();
 
-	ADD_SUITE(test_vdecode_args);
-	/*ADD_SUITE(test_vdecode_main);*/
+	ADD_SUITE(test_decoder_args);
+	/*ADD_SUITE(test_decoder_main);*/
 
 	return run_test();
 }
