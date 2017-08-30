@@ -39,7 +39,7 @@ ltmain.sh
 
 ###########
 *.test
-vdecode/vdecode
+decoder/decoder
 vbuf/vbuf
 vplayer/vplayer
 aplayer/aplayer

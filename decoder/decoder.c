@@ -24,7 +24,7 @@ int process_args(decoder_args *args, int argc, char **argv, FILE *stderr) {
 		{0, 0, 0, 0}
 	};
 	optind = 1;
-	while((c = getopt_long(argc, argv, "v:b:", long_options, &option_index)) != -1) {
+	while((c = getopt_long(argc, argv, "a:v:b:", long_options, &option_index)) != -1) {
 		switch(c) {
 			case 'a':
 				sscanf(optarg, "%d", &args->track_index);
