@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include "iob/iob.h"
 #include "iob/vfs.h"
+#include "iob/afs.h"
 #include "bputil/bputil.h"
 
 typedef struct ffmpeg {
@@ -65,6 +66,8 @@ extern int ffmpeg_frame_copy(ffmpeg_frame *frame, void *, size_t, io_stream *);
 extern int ffmpeg_create_frame(void *, int (*)(ffmpeg_frame *, void *, io_stream *), io_stream *);
 
 extern int ffmpeg_load_image(ffmpeg_frame *, const video_frames *, void *, io_stream *);
+
+extern int ffmpeg_load_audio(ffmpeg_frame *, const audio_frames *, int, void *, io_stream *);
 
 #define ffmpeg_frame_data(frame) (frame)->frame->data
 #define ffmpeg_frame_linesize(frame) (frame)->frame->linesize

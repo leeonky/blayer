@@ -28,6 +28,7 @@ mock_function_8(int, av_image_copy_to_buffer, uint8_t *, int, const uint8_t * co
 mock_function_5(int, av_samples_get_buffer_size, int *, int, int, enum AVSampleFormat, int);
 mock_function_7(int, av_samples_copy, uint8_t **, uint8_t * const *, int, int, int, int, enum AVSampleFormat);
 mock_function_6(int, av_samples_alloc, uint8_t **, int *, int, int, enum AVSampleFormat, int);
+mock_function_7(int, av_samples_fill_arrays, uint8_t **, int *, const uint8_t *, int, int, enum AVSampleFormat, int);
 
 int av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
 	snprintf(errbuf, errbuf_size, "%d", errnum);

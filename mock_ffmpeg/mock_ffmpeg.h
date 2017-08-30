@@ -35,4 +35,6 @@ extern_mock_function_5(int, av_samples_get_buffer_size, int *, int, int, enum AV
 extern_mock_function_7(int, av_samples_copy, uint8_t **, uint8_t * const *, int, int, int, int, enum AVSampleFormat);
 extern_mock_function_6(int, av_samples_alloc, uint8_t **, int *, int, int, enum AVSampleFormat, int);
 
+extern_mock_function_7(int, av_samples_fill_arrays, uint8_t **, int *, const uint8_t *, int, int, enum AVSampleFormat, int);
+
 #endif

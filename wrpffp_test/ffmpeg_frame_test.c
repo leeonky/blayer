@@ -6,6 +6,7 @@
 #include "wrpffp/wrpffp.h"
 #include "iob/iob.h"
 #include "iob/vfs.h"
+#include "iob/afs.h"
 
 SUITE_START("ffmpeg_frame_copy_test");
 
@@ -234,3 +235,65 @@ SUITE_CASE("failed to fill") {
 }
 
 SUITE_END(ffmpeg_load_image_test);
+
+SUITE_START("ffmpeg_load_audio_test");
+
+static uint8_t arg_buffer[128];
+static audio_frames arg_afs;
+static int arg_samples;
+
+BEFORE_EACH() {
+	init_subject("");
+	arg_io_s.stdin = actxt.input_stream;
+	arg_io_s.stdout = actxt.output_stream;
+	arg_io_s.stderr = actxt.error_stream;
+
+	arg_fframe.frame = &arg_frame;
+
+	arg_afs.sample_rate = 44100;
+	arg_afs.channels = 3;
+	arg_afs.format = 10;
+	arg_afs.align = 1;
+	arg_samples = 90;
+
+	init_mock_function(av_samples_fill_arrays, NULL);
+	return 0;
+}
+
+AFTER_EACH() {
+	return close_subject();
+}
+
+SUBJECT(int) {
+	return ffmpeg_load_audio(&arg_fframe, &arg_afs, arg_samples, arg_buffer,  &arg_io_s);
+}
+
+SUITE_CASE("load image") {
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 1, arg_frame.data);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, arg_frame.linesize);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, arg_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, arg_afs.channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, arg_samples);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, arg_afs.format);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_afs.align);
+
+	CUE_ASSERT_EQ(arg_fframe.codec_type, AVMEDIA_TYPE_AUDIO);
+	CUE_ASSERT_EQ(arg_fframe.align, 1);
+}
+
+static int stub_av_samples_fill_arrays_failed(uint8_t **b, int *s, const uint8_t *d, int channels, int samples, enum AVSampleFormat format, int align) {
+	return -200;
+}
+
+SUITE_CASE("failed to fill") {
+	init_mock_function(av_samples_fill_arrays, stub_av_samples_fill_arrays_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -200\n");
+}
+
+SUITE_END(ffmpeg_load_audio_test);

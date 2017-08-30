@@ -369,8 +369,17 @@ int ffmpeg_load_image(ffmpeg_frame *frame, const video_frames *vfs, void *data, 
 	AVFrame *f = frame->frame;
 	frame->codec_type = AVMEDIA_TYPE_VIDEO;
 	frame->align = vfs->align;
-	if((ret=av_image_fill_arrays(f->data, f->linesize, (const uint8_t *)data, vfs->format, vfs->width, vfs->height, vfs->align))<0) {
+	if((ret=av_image_fill_arrays(f->data, f->linesize, (const uint8_t *)data, vfs->format, vfs->width, vfs->height, vfs->align))<0)
 		res = print_error(ret, io_s->stderr);
-	}
+	return res;
+}
+
+int ffmpeg_load_audio(ffmpeg_frame *frame, const audio_frames *afs, int samples, void *data, io_stream *io_s) {
+	int res = 0, ret;
+	AVFrame *f = frame->frame;
+	frame->codec_type = AVMEDIA_TYPE_AUDIO;
+	frame->align = afs->align;
+	if((ret=av_samples_fill_arrays(f->data, f->linesize, (const uint8_t *)data, afs->channels, samples, afs->format, afs->align))<0)
+		res = print_error(ret, io_s->stderr);
 	return res;
 }
