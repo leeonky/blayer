@@ -15,17 +15,24 @@ int process_args(decoder_args *args, int argc, char **argv, FILE *stderr) {
 	args->file_name = NULL;
 	args->track_index = -1;
 	args->buffer_bits = 4;
+	args->track_type = AVMEDIA_TYPE_VIDEO;
 	int option_index = 0, c;
 	struct option long_options[] = {
-		{"track_index", required_argument, 0, 't'},
-		{"buffer_bits", required_argument, 0, 'b'},
+		{"audio", required_argument, 0, 'a'},
+		{"video", required_argument, 0, 'v'},
+		{"bits", required_argument, 0, 'b'},
 		{0, 0, 0, 0}
 	};
 	optind = 1;
-	while((c = getopt_long(argc, argv, "t:b:", long_options, &option_index)) != -1) {
+	while((c = getopt_long(argc, argv, "v:b:", long_options, &option_index)) != -1) {
 		switch(c) {
-			case 't':
+			case 'a':
 				sscanf(optarg, "%d", &args->track_index);
+				args->track_type = AVMEDIA_TYPE_AUDIO;
+				break;
+			case 'v':
+				sscanf(optarg, "%d", &args->track_index);
+				args->track_type = AVMEDIA_TYPE_VIDEO;
 				break;
 			case 'b':
 				sscanf(optarg, "%d", &args->buffer_bits);
@@ -78,7 +85,7 @@ int decoder_main(int argc, char **argv, FILE *stdin, FILE *stdout, FILE *stderr)
 
 	if(!process_args(&args, argc, argv, stderr)) {
 		io_stream io_s = {stdin, stdout, stderr};
-		return ffmpeg_open_stream(args.file_name, AVMEDIA_TYPE_AUDIO, args.track_index, &context, stream_opened, &io_s);
+		return ffmpeg_open_stream(args.file_name, args.track_type, args.track_index, &context, stream_opened, &io_s);
 	}
 	return -1;
 }

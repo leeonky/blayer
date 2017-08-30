@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cunitexd.h>
+#include <libavformat/avformat.h>
 #include "decoder/decoder.h"
 
 static decoder_args args;
@@ -29,30 +30,43 @@ SUITE_CASE("should got file name when only set video file") {
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.track_index, -1);
+	CUE_ASSERT_EQ(args.track_type, AVMEDIA_TYPE_VIDEO);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can set opt of video track") {
-	init_subject("", "-t", "1", "test.avi", "test");
+	init_subject("", "-v", "1", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.track_index, 1);
+	CUE_ASSERT_EQ(args.track_type, AVMEDIA_TYPE_VIDEO);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can set long opt of video track") {
-	init_subject("", "--track_index", "2", "test.avi", "test");
+	init_subject("", "--video", "2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.track_index, 2);
+	CUE_ASSERT_EQ(args.track_type, AVMEDIA_TYPE_VIDEO);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
 SUITE_CASE("can add '=' between long opt and value") {
-	init_subject("", "--track_index=2", "test.avi", "test");
+	init_subject("", "--video=2", "test.avi", "test");
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 	CUE_ASSERT_EQ(args.track_index, 2);
+	CUE_ASSERT_EQ(args.track_type, AVMEDIA_TYPE_VIDEO);
+	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
+}
+
+SUITE_CASE("set audio track") {
+	init_subject("", "--audio=2", "test.avi", "test");
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+	CUE_ASSERT_EQ(args.track_index, 2);
+	CUE_ASSERT_EQ(args.track_type, AVMEDIA_TYPE_AUDIO);
 	CUE_ASSERT_STRING_EQ(args.file_name, "test.avi");
 }
 
