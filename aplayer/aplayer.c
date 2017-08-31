@@ -46,14 +46,16 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 	app_context *context_arg = (app_context *)arg;
 	const audio_frames *afs = context_arg->frames;
 	ffmpeg_frame *frame = context_arg->frame;
+	sdl_audio *audio = context_arg->audio;
 	int i;
 
 	for(i=0; i<afs->count; ++i) {
 		if(!ffmpeg_load_audio(frame, afs, afs->frames[i].samples_size, shrb_get(cb, afs->frames[i].index), io_s)) {
-			sdl_play_audio(context_arg->audio, ffmpeg_frame_data(frame)[0], ffmpeg_frame_linesize(frame)[0]);
-			usleep(50000);
+			sdl_audio_clock(audio, afs->frames[i].pts, io_s);
+			sdl_play_audio(audio, ffmpeg_frame_data(frame)[0], ffmpeg_frame_linesize(frame)[0]);
 		}
 		shrb_free(cb);
+		sdl_audio_waiting(audio, 100000);
 	}
 	return 0;
 }
