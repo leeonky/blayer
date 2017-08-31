@@ -3,6 +3,7 @@
 
 #include <libavformat/avformat.h>
 #include <libavutil/imgutils.h>
+#include <libswresample/swresample.h>
 #include <stdio.h>
 #include "iob/iob.h"
 #include "iob/vfs.h"
@@ -71,6 +72,12 @@ extern int ffmpeg_load_audio(ffmpeg_frame *, const audio_frames *, int, void *, 
 
 #define ffmpeg_frame_data(frame) (frame)->frame->data
 #define ffmpeg_frame_linesize(frame) (frame)->frame->linesize
+
+typedef struct ffmpeg_resampler {
+	SwrContext *swr_context;
+} ffmpeg_resampler;
+
+extern int ffmpeg_init_resampler(void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);
 
 #endif
 

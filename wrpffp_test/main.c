@@ -18,6 +18,8 @@ int main() {
 	ADD_SUITE(ffmpeg_load_image_test);
 	ADD_SUITE(ffmpeg_load_audio_test);
 	ADD_SUITE(ffmpeg_audio_decode_test);
+	ADD_SUITE(ffmpeg_resample_init_test);
+	ADD_SUITE(ffmpeg_resample_test);
 
 	return run_test();
 }

@@ -37,7 +37,7 @@ static SDL_AudioFormat parse_format(enum AVSampleFormat format, io_stream *io_s)
 		case AV_SAMPLE_FMT_S64:
 		case AV_SAMPLE_FMT_S64P:
 		default:
-			fprintf(io_s->stderr, "Warning[aplayer]: Unsupport sample format: %d\n", format);
+			fprintf(io_s->stderr, "Warning[aplayer]: Unsupport sample format: %s\n", av_get_sample_fmt_name(format));
 			return 0;
 	}
 }
@@ -53,9 +53,11 @@ static int process_frame(shm_cbuf *cb, void *arg, io_stream *io_s) {
 		if(!ffmpeg_load_audio(frame, afs, afs->frames[i].samples_size, shrb_get(cb, afs->frames[i].index), io_s)) {
 			sdl_audio_clock(audio, afs->frames[i].pts, io_s);
 			sdl_play_audio(audio, ffmpeg_frame_data(frame)[0], ffmpeg_frame_linesize(frame)[0]);
+			shrb_free(cb);
+			sdl_audio_waiting(audio, 100000);
+		} else {
+			shrb_free(cb);
 		}
-		shrb_free(cb);
-		sdl_audio_waiting(audio, 100000);
 	}
 	return 0;
 }

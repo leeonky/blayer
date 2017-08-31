@@ -384,3 +384,12 @@ int ffmpeg_load_audio(ffmpeg_frame *frame, const audio_frames *afs, int samples,
 	return res;
 }
 
+int ffmpeg_init_resampler(void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
+	int res = 0;
+	ffmpeg_resampler rsp = {};
+	if(action)
+		res = action(&rsp, arg, io_s);
+	if(rsp.swr_context)
+		swr_free(&rsp.swr_context);
+	return res;
+}

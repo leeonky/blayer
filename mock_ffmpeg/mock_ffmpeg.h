@@ -39,4 +39,8 @@ extern_mock_function_7(int, av_samples_fill_arrays, uint8_t **, int *, const uin
 
 extern_mock_function_1(int, av_get_bytes_per_sample, enum AVSampleFormat);
 
+extern_mock_function_9(struct SwrContext *, swr_alloc_set_opts, struct SwrContext *, int64_t , enum AVSampleFormat, int, int64_t, enum AVSampleFormat, int, int, void *);
+extern_mock_function_1(int, swr_init, struct SwrContext *);
+extern_mock_void_function_1(swr_free, struct SwrContext **);
+
 #endif

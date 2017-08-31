@@ -32,6 +32,10 @@ mock_function_7(int, av_samples_fill_arrays, uint8_t **, int *, const uint8_t *,
 
 mock_function_1(int, av_get_bytes_per_sample, enum AVSampleFormat);
 
+mock_function_9(struct SwrContext *, swr_alloc_set_opts, struct SwrContext *, int64_t , enum AVSampleFormat, int, int64_t, enum AVSampleFormat, int, int, void *);
+mock_function_1(int, swr_init, struct SwrContext *);
+mock_void_function_1(swr_free, struct SwrContext **);
+
 int av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
 	snprintf(errbuf, errbuf_size, "%d", errnum);
 	return 0;
