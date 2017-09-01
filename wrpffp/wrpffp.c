@@ -394,27 +394,57 @@ int ffmpeg_init_resampler(void *arg, int(*action)(ffmpeg_resampler *, void *, io
 	return res;
 }
 
+static int copy_afs_and_invoke_action(ffmpeg_resampler *resampler, const audio_frames *in_afs, int sample_rate, uint64_t channel_layout, enum AVSampleFormat format, audio_frames *out_afs, void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
+	*out_afs = *in_afs;
+	resampler->out_layout = out_afs->layout = channel_layout;
+	resampler->out_format = out_afs->format = format;
+	resampler->out_sample_rate = out_afs->sample_rate = sample_rate;
+	resampler->in_layout = in_afs->layout;
+	resampler->in_format = in_afs->format;
+	resampler->in_sample_rate = in_afs->sample_rate;
+	out_afs->channels = av_get_channel_layout_nb_channels(channel_layout);
+	if(action)
+		return action(resampler, arg, io_s);
+	return 0;
+}	
+
+static int is_same_format(ffmpeg_resampler *resampler, const audio_frames *in_afs, int sample_rate, uint64_t channel_layout, enum AVSampleFormat format) {
+	return resampler->out_sample_rate==sample_rate && resampler->out_layout==channel_layout && resampler->out_format==format && resampler->in_sample_rate==in_afs->sample_rate && resampler->in_layout==in_afs->layout && resampler->in_format==in_afs->format;
+}
+
+static int is_same_resample(const audio_frames *in_afs, int sample_rate, uint64_t channel_layout, enum AVSampleFormat format) {
+	return in_afs->sample_rate==sample_rate && in_afs->layout==channel_layout && in_afs->format==format;
+}
+
 int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_afs, int sample_rate, uint64_t channel_layout, enum AVSampleFormat format, audio_frames *out_afs, void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
 	int res = 0, ret;
-	SwrContext *swr_context = NULL;
-	if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, sample_rate, 
-			in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
-		if(!(ret=swr_init(swr_context))) {
-			*out_afs = *in_afs;
-			resampler->swr_context = swr_context;
-			out_afs->layout = channel_layout;
-			out_afs->format = format;
-			out_afs->sample_rate = sample_rate;
-			out_afs->channels = av_get_channel_layout_nb_channels(channel_layout);
-			if(action)
-				res = action(resampler, arg, io_s);
-		} else {
-			swr_free(&swr_context);
-			res = print_error(ret, io_s->stderr);
+	if(resampler->swr_context) {
+		if(is_same_format(resampler, in_afs, sample_rate, channel_layout, format))
+			res = copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
+		else {
+			swr_free(&resampler->swr_context);
+			resampler->swr_context = NULL;
 		}
-	} else {
-		res = -1;
-		fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc SwrContext\n");
+	}
+	if(!resampler->swr_context) {
+		if(is_same_resample(in_afs, sample_rate, channel_layout, format))
+			res = copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
+		else {
+			SwrContext *swr_context = NULL;
+			if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, sample_rate, 
+							in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
+				if(!(ret=swr_init(swr_context))) {
+					resampler->swr_context = swr_context;
+					return copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
+				} else {
+					swr_free(&swr_context);
+					res = print_error(ret, io_s->stderr);
+				}
+			} else {
+				res = -1;
+				fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc SwrContext\n");
+			}
+		}
 	}
 	return res;
 }

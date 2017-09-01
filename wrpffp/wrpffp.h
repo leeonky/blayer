@@ -75,6 +75,9 @@ extern int ffmpeg_load_audio(ffmpeg_frame *, const audio_frames *, int, void *, 
 
 typedef struct ffmpeg_resampler {
 	SwrContext *swr_context;
+	int out_sample_rate, in_sample_rate;
+	enum AVSampleFormat out_format, in_format;
+	uint64_t out_layout, in_layout;
 } ffmpeg_resampler;
 
 extern int ffmpeg_init_resampler(void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);
