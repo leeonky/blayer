@@ -79,5 +79,7 @@ typedef struct ffmpeg_resampler {
 
 extern int ffmpeg_init_resampler(void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);
 
+extern int ffmpeg_reload_resampler(ffmpeg_resampler *, const audio_frames *, int, uint64_t, enum AVSampleFormat, audio_frames *, void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);
+
 #endif
 

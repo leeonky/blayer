@@ -17,7 +17,7 @@ static int parse_frames_in_stream(FILE *frames_stream, void *arg) {
 
 static int parse_audio_frames(audio_frames *frames, const char *event_args) {
 	int res = 0;
-	if(9==sscanf(event_args, "rt:%d ch:%d fmt:%d buf:%d lay:%d align:%d cbuf:%d bits:%d size:%d", &frames->sample_rate, &frames->channels, &frames->format, &frames->buffer_size, &frames->layout, &frames->align, &frames->cbuf_id, &frames->cbuf_bits, &frames->cbuf_size)) {
+	if(9==sscanf(event_args, "rt:%d ch:%d fmt:%d buf:%d lay:%"PRIu64" align:%d cbuf:%d bits:%d size:%d", &frames->sample_rate, &frames->channels, &frames->format, &frames->buffer_size, &frames->layout, &frames->align, &frames->cbuf_id, &frames->cbuf_bits, &frames->cbuf_size)) {
 		char *frames_args = strstr(event_args, "frames:");
 		if(frames_args)
 			return fmemprocess(frames_args, strlen(frames_args), "r", frames, parse_frames_in_stream);

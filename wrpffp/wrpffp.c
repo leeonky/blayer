@@ -393,3 +393,29 @@ int ffmpeg_init_resampler(void *arg, int(*action)(ffmpeg_resampler *, void *, io
 		swr_free(&rsp.swr_context);
 	return res;
 }
+
+int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_afs, int sample_rate, uint64_t channel_layout, enum AVSampleFormat format, audio_frames *out_afs, void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
+	int res = 0, ret;
+	SwrContext *swr_context = NULL;
+	if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, sample_rate, 
+			in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
+		if(!(ret=swr_init(swr_context))) {
+			*out_afs = *in_afs;
+			resampler->swr_context = swr_context;
+			out_afs->layout = channel_layout;
+			out_afs->format = format;
+			out_afs->sample_rate = sample_rate;
+			out_afs->channels = av_get_channel_layout_nb_channels(channel_layout);
+			if(action)
+				res = action(resampler, arg, io_s);
+		} else {
+			swr_free(&swr_context);
+			res = print_error(ret, io_s->stderr);
+		}
+	} else {
+		res = -1;
+		fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc SwrContext\n");
+	}
+	return res;
+}
+
