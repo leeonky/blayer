@@ -215,7 +215,11 @@ SUITE_CASE("failed to alloc context") {
 
 	CUE_EXPECT_NEVER_CALLED(swr_init);
 
+	CUE_EXPECT_NEVER_CALLED(av_malloc);
+
 	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
+
+	CUE_EXPECT_NEVER_CALLED(swr_free);
 
 	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: failed to alloc SwrContext\n");
 }
@@ -231,6 +235,8 @@ SUITE_CASE("failed to init context") {
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
+	CUE_EXPECT_NEVER_CALLED(av_malloc);
+
 	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
 
 	CUE_EXPECT_CALLED_ONCE(swr_free);
@@ -239,6 +245,16 @@ SUITE_CASE("failed to init context") {
 }
 
 SUITE_CASE("failed to av alloc") {
+	arg_resampler.swr_context = NULL;
+	init_mock_function(av_malloc, NULL);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
+
+	CUE_EXPECT_CALLED_ONCE(swr_free);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: failed to alloc buffer\n");
 }
 
 SUITE_CASE("no need to alloc buffer") {
