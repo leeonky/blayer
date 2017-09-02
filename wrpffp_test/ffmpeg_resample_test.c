@@ -75,7 +75,7 @@ SUITE_CASE("should free swr when have opend swr") {
 SUITE_END(ffmpeg_resample_init_test);
 
 SUITE_START("ffmpeg_resample_reload_test");
-static int arg_in_sample_rate, arg_out_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size;
+static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size;
 static uint64_t arg_in_channels_layout, arg_out_channels_layout;
 static enum AVSampleFormat arg_in_format, arg_out_format;
 static ffmpeg_resampler arg_resampler;
@@ -109,12 +109,11 @@ BEFORE_EACH() {
 	arg_io_s.stdout = actxt.output_stream;
 	arg_io_s.stderr = actxt.error_stream;
 
-	arg_in_sample_rate = 48000;
+	arg_sample_rate = 48000;
 	arg_in_channels_layout = AV_CH_LAYOUT_5POINT1;
 	arg_in_format = AV_SAMPLE_FMT_U8;
 	ret_in_channels = 3;
 
-	arg_out_sample_rate = 96000;
 	arg_out_channels_layout = AV_CH_LAYOUT_4POINT0;
 	arg_out_format = AV_SAMPLE_FMT_S16;
 	ret_out_channels = 5;
@@ -143,13 +142,11 @@ AFTER_EACH() {
 }
 
 SUBJECT(int) {
-	return ffmpeg_reload_resampler(&arg_resampler, &arg_in_afs, arg_out_sample_rate, arg_out_channels_layout, arg_out_format, &arg_out_afs, arg_arg, reload_resampler_action, &arg_io_s);
+	return ffmpeg_reload_resampler(&arg_resampler, &arg_in_afs, arg_out_channels_layout, arg_out_format, &arg_out_afs, arg_arg, reload_resampler_action, &arg_io_s);
 }
 
 SUITE_CASE("first reload with params") {
-	arg_in_sample_rate = 100;
-	arg_out_sample_rate = 199;
-	arg_in_afs.sample_rate = arg_in_sample_rate;
+	arg_in_afs.sample_rate = arg_sample_rate;
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
 	arg_in_afs.count = 128;
@@ -162,10 +159,10 @@ SUITE_CASE("first reload with params") {
 	CUE_EXPECT_CALLED_WITH_PTR(swr_alloc_set_opts, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 2, arg_out_channels_layout);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 3, arg_out_format);
-	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 4, arg_out_sample_rate);
+	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 4, arg_sample_rate);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 5, arg_in_channels_layout);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 6, arg_in_format);
-	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 7, arg_in_sample_rate);
+	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 7, arg_sample_rate);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 8, 0);
 	CUE_EXPECT_CALLED_WITH_PTR(swr_alloc_set_opts, 8, NULL);
 
@@ -177,12 +174,12 @@ SUITE_CASE("first reload with params") {
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 2, arg_arg);
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 3, &arg_io_s);
 
-	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_out_sample_rate);
+	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_sample_rate);
 	CUE_ASSERT_EQ(arg_out_afs.layout, arg_out_channels_layout);
 	CUE_ASSERT_EQ(arg_out_afs.channels, ret_out_channels);
 	CUE_ASSERT_EQ(arg_out_afs.format, arg_out_format);
 	CUE_ASSERT_EQ(arg_out_afs.count, 128);
-	CUE_ASSERT_EQ(arg_out_afs.buffer_samples, 40);
+	CUE_ASSERT_EQ(arg_out_afs.buffer_samples, arg_in_afs.buffer_samples);
 
 	CUE_EXPECT_CALLED_ONCE(av_malloc);
 	CUE_EXPECT_CALLED_WITH_INT(av_malloc, 1, ret_out_buffer_size);
@@ -190,14 +187,13 @@ SUITE_CASE("first reload with params") {
 	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, ret_out_channels);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 40);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, arg_in_afs.buffer_samples);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, arg_out_format);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, arg_in_afs.align);
 
-	CUE_ASSERT_EQ(arg_resampler.out_sample_rate, arg_out_sample_rate);
+	CUE_ASSERT_EQ(arg_resampler.sample_rate, arg_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.out_layout, arg_out_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.out_format, arg_out_format);
-	CUE_ASSERT_EQ(arg_resampler.in_sample_rate, arg_in_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.in_layout, arg_in_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.in_format, arg_in_format);
 	CUE_ASSERT_PTR_EQ(arg_resampler.buffer, ret_buffer);
@@ -263,10 +259,9 @@ SUITE_CASE("no need to alloc buffer") {
 SUITE_CASE("reload same convertion with last params, should not close and open") {
 	arg_resampler.swr_context = arg_swr_context;
 
-	arg_resampler.in_sample_rate = arg_in_afs.sample_rate = arg_in_sample_rate;
+	arg_resampler.sample_rate = arg_in_afs.sample_rate = arg_sample_rate;
 	arg_resampler.in_layout = arg_in_afs.layout = arg_in_channels_layout;
 	arg_resampler.in_format = arg_in_afs.format = arg_in_format;
-	arg_resampler.out_sample_rate = arg_out_sample_rate;
 	arg_resampler.out_layout = arg_out_channels_layout;
 	arg_resampler.out_format = arg_out_format;
 
@@ -286,7 +281,7 @@ SUITE_CASE("load diff convertion with last params") {
 	arg_resampler.out_layout = 0;
 	arg_resampler.out_format = 0;
 
-	arg_in_afs.sample_rate = arg_in_sample_rate;
+	arg_in_afs.sample_rate = arg_sample_rate;
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
 	arg_in_afs.count = 128;
@@ -298,10 +293,10 @@ SUITE_CASE("load diff convertion with last params") {
 	CUE_EXPECT_CALLED_WITH_PTR(swr_alloc_set_opts, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 2, arg_out_channels_layout);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 3, arg_out_format);
-	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 4, arg_out_sample_rate);
+	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 4, arg_sample_rate);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 5, arg_in_channels_layout);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 6, arg_in_format);
-	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 7, arg_in_sample_rate);
+	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 7, arg_sample_rate);
 	CUE_EXPECT_CALLED_WITH_INT(swr_alloc_set_opts, 8, 0);
 	CUE_EXPECT_CALLED_WITH_PTR(swr_alloc_set_opts, 8, NULL);
 
@@ -313,16 +308,15 @@ SUITE_CASE("load diff convertion with last params") {
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 2, arg_arg);
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 3, &arg_io_s);
 
-	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_out_sample_rate);
+	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_sample_rate);
 	CUE_ASSERT_EQ(arg_out_afs.layout, arg_out_channels_layout);
 	CUE_ASSERT_EQ(arg_out_afs.channels, ret_out_channels);
 	CUE_ASSERT_EQ(arg_out_afs.format, arg_out_format);
 	CUE_ASSERT_EQ(arg_out_afs.count, 128);
 
-	CUE_ASSERT_EQ(arg_resampler.out_sample_rate, arg_out_sample_rate);
+	CUE_ASSERT_EQ(arg_resampler.sample_rate, arg_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.out_layout, arg_out_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.out_format, arg_out_format);
-	CUE_ASSERT_EQ(arg_resampler.in_sample_rate, arg_in_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.in_layout, arg_in_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.in_format, arg_in_format);
 }
@@ -330,10 +324,9 @@ SUITE_CASE("load diff convertion with last params") {
 SUITE_CASE("in and out format is the same") {
 	arg_resampler.swr_context = NULL;
 
-	arg_out_sample_rate = arg_in_sample_rate;
 	arg_out_channels_layout = arg_in_channels_layout;
 	arg_out_format = arg_in_format;
-	arg_in_afs.sample_rate = arg_in_sample_rate;
+	arg_in_afs.sample_rate = arg_sample_rate;
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
 
