@@ -80,6 +80,7 @@ typedef struct ffmpeg_resampler {
 	uint64_t out_layout, in_layout;
 	void *buffer;
 	int buffer_size;
+	uint8_t *planar_buffer[12];
 } ffmpeg_resampler;
 
 extern int ffmpeg_init_resampler(void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);

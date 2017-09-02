@@ -448,11 +448,18 @@ int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_
 			if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, in_afs->sample_rate, 
 							in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
 				if(!(ret=swr_init(swr_context))) {
-					int size = av_samples_get_buffer_size(NULL, av_get_channel_layout_nb_channels(channel_layout), in_afs->buffer_samples, format, in_afs->align);
-					if((resampler->buffer = av_malloc(size))) {
-						resampler->swr_context = swr_context;
-						resampler->buffer_size = size;
-						return  setup_resampler_and_copy_afs_and_invoke_action(resampler, in_afs, channel_layout, format, out_afs, arg, action, io_s);
+					int channels = av_get_channel_layout_nb_channels(channel_layout);
+					int size = av_samples_get_buffer_size(NULL, channels, in_afs->buffer_samples, format, in_afs->align);
+					void *buffer = NULL;
+					if((buffer = av_malloc(size))) {
+						if((ret=av_samples_fill_arrays(resampler->planar_buffer, NULL, buffer, channels, in_afs->buffer_samples, format, in_afs->align))>=0) {
+							resampler->buffer = buffer;
+							resampler->swr_context = swr_context;
+							resampler->buffer_size = size;
+							return  setup_resampler_and_copy_afs_and_invoke_action(resampler, in_afs, channel_layout, format, out_afs, arg, action, io_s);
+						} else
+							print_error(ret, io_s->stderr);
+						av_free(buffer);
 					} else
 						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc buffer\n");
 				} else

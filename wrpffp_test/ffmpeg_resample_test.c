@@ -75,7 +75,7 @@ SUITE_CASE("should free swr when have opend swr") {
 SUITE_END(ffmpeg_resample_init_test);
 
 SUITE_START("ffmpeg_resample_reload_test");
-static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size, arg_align;
+static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size, arg_align, arg_buffer_samples;
 static uint64_t arg_in_channels_layout, arg_out_channels_layout;
 static enum AVSampleFormat arg_in_format, arg_out_format;
 static ffmpeg_resampler arg_resampler;
@@ -113,6 +113,7 @@ BEFORE_EACH() {
 	arg_in_channels_layout = AV_CH_LAYOUT_5POINT1;
 	arg_in_format = AV_SAMPLE_FMT_U8;
 	ret_in_channels = 3;
+	arg_buffer_samples = 64;
 	arg_align = 1;
 
 	arg_out_channels_layout = AV_CH_LAYOUT_4POINT0;
@@ -132,6 +133,7 @@ BEFORE_EACH() {
 	init_mock_function(av_malloc, stub_av_malloc);
 	init_mock_function(av_free, NULL);
 	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
+	init_mock_function(av_samples_fill_arrays, NULL);
 
 	arg_arg = &arg_arg;
 
@@ -151,7 +153,7 @@ SUITE_CASE("first reload with params") {
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
 	arg_in_afs.count = 128;
-	arg_in_afs.buffer_samples = 20;
+	arg_in_afs.buffer_samples = arg_buffer_samples;
 	arg_in_afs.align = arg_align;
 	arg_resampler.swr_context = NULL;
 
@@ -181,7 +183,7 @@ SUITE_CASE("first reload with params") {
 	CUE_ASSERT_EQ(arg_out_afs.channels, ret_out_channels);
 	CUE_ASSERT_EQ(arg_out_afs.format, arg_out_format);
 	CUE_ASSERT_EQ(arg_out_afs.count, 128);
-	CUE_ASSERT_EQ(arg_out_afs.buffer_samples, arg_in_afs.buffer_samples);
+	CUE_ASSERT_EQ(arg_out_afs.buffer_samples, arg_buffer_samples);
 
 	CUE_EXPECT_CALLED_ONCE(av_malloc);
 	CUE_EXPECT_CALLED_WITH_INT(av_malloc, 1, ret_out_buffer_size);
@@ -189,9 +191,18 @@ SUITE_CASE("first reload with params") {
 	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
 	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, ret_out_channels);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, arg_in_afs.buffer_samples);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, arg_buffer_samples);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, arg_out_format);
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, arg_in_afs.align);
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 1, arg_resampler.planar_buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, NULL);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, ret_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, ret_out_channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, arg_buffer_samples);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, arg_out_format);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_in_afs.align);
 
 	CUE_ASSERT_EQ(arg_resampler.sample_rate, arg_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.align, arg_align);
@@ -217,6 +228,8 @@ SUITE_CASE("failed to alloc context") {
 
 	CUE_EXPECT_NEVER_CALLED(av_malloc);
 
+	CUE_EXPECT_NEVER_CALLED(av_samples_fill_arrays);
+
 	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
 
 	CUE_EXPECT_NEVER_CALLED(swr_free);
@@ -237,6 +250,8 @@ SUITE_CASE("failed to init context") {
 
 	CUE_EXPECT_NEVER_CALLED(av_malloc);
 
+	CUE_EXPECT_NEVER_CALLED(av_samples_fill_arrays);
+
 	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
 
 	CUE_EXPECT_CALLED_ONCE(swr_free);
@@ -250,6 +265,8 @@ SUITE_CASE("failed to av alloc") {
 
 	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
 
+	CUE_EXPECT_NEVER_CALLED(av_samples_fill_arrays);
+
 	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
 
 	CUE_EXPECT_CALLED_ONCE(swr_free);
@@ -257,7 +274,23 @@ SUITE_CASE("failed to av alloc") {
 	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: failed to alloc buffer\n");
 }
 
-SUITE_CASE("no need to alloc buffer") {
+static int stub_av_samples_fill_arrays_failed(uint8_t **b, int *s, const uint8_t *d, int channels, int samples, enum AVSampleFormat format, int align) {
+	return -1;
+}
+
+SUITE_CASE("failed fill") {
+	arg_resampler.swr_context = NULL;
+	init_mock_function(av_samples_fill_arrays, stub_av_samples_fill_arrays_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(reload_resampler_action);
+
+	CUE_EXPECT_CALLED_ONCE(av_free);
+
+	CUE_EXPECT_CALLED_ONCE(swr_free);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -1\n");
 }
 
 SUITE_CASE("reload same convertion with last params, should not close and open") {
@@ -354,6 +387,26 @@ SUITE_START("ffmpeg_resample_test");
 static void *in_buffer, *out_buffer;
 
 mock_function_3(int, resample_aciton, ffmpeg_resampler *, void *, io_stream *);
+
+BEFORE_EACH() {
+	init_subject("");
+	arg_io_s.stdin = actxt.input_stream;
+	arg_io_s.stdout = actxt.output_stream;
+	arg_io_s.stderr = actxt.error_stream;
+
+	ret_buffer = &ret_buffer;
+
+	arg_arg = &arg_arg;
+
+	/*init_mock_function(swr_convert, NULL);*/
+	/*init_mock_function(memcpy, NULL);*/
+	init_mock_function(av_samples_fill_arrays, NULL);
+	return 0;
+}
+
+AFTER_EACH() {
+	return close_subject();
+}
 
 SUBJECT(int) {
 	/*return ffmpeg_resample(&arg_resampler, in_buffer, out_buffer, arg_arg, resample_aciton, &arg_io_s);*/
