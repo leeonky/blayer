@@ -75,7 +75,7 @@ SUITE_CASE("should free swr when have opend swr") {
 SUITE_END(ffmpeg_resample_init_test);
 
 SUITE_START("ffmpeg_resample_reload_test");
-static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size, arg_align, arg_buffer_samples;
+static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size, arg_align, arg_buffer_samples, arg_in_channels;
 static uint64_t arg_in_channels_layout, arg_out_channels_layout;
 static enum AVSampleFormat arg_in_format, arg_out_format;
 static ffmpeg_resampler arg_resampler;
@@ -152,6 +152,7 @@ SUITE_CASE("first reload with params") {
 	arg_in_afs.sample_rate = arg_sample_rate;
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
+	arg_in_afs.channels = arg_in_channels = 3;
 	arg_in_afs.count = 128;
 	arg_in_afs.buffer_samples = arg_buffer_samples;
 	arg_in_afs.align = arg_align;
@@ -211,6 +212,7 @@ SUITE_CASE("first reload with params") {
 	CUE_ASSERT_EQ(arg_resampler.out_format, arg_out_format);
 	CUE_ASSERT_EQ(arg_resampler.in_layout, arg_in_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.in_format, arg_in_format);
+	CUE_ASSERT_EQ(arg_resampler.in_channels, arg_in_channels);
 	CUE_ASSERT_PTR_EQ(arg_resampler.buffer, ret_buffer);
 }
 
@@ -388,34 +390,50 @@ static void *in_buffer, *out_buffer;
 
 mock_function_3(int, resample_aciton, ffmpeg_resampler *, void *, io_stream *);
 
-BEFORE_EACH() {
-	init_subject("");
-	arg_io_s.stdin = actxt.input_stream;
-	arg_io_s.stdout = actxt.output_stream;
-	arg_io_s.stderr = actxt.error_stream;
+/*BEFORE_EACH() {*/
+	/*init_subject("");*/
+	/*arg_io_s.stdin = actxt.input_stream;*/
+	/*arg_io_s.stdout = actxt.output_stream;*/
+	/*arg_io_s.stderr = actxt.error_stream;*/
 
-	ret_buffer = &ret_buffer;
+	/*ret_buffer = &ret_buffer;*/
 
-	arg_arg = &arg_arg;
+	/*arg_arg = &arg_arg;*/
 
 	/*init_mock_function(swr_convert, NULL);*/
 	/*init_mock_function(memcpy, NULL);*/
-	init_mock_function(av_samples_fill_arrays, NULL);
-	return 0;
-}
+	/*init_mock_function(av_samples_fill_arrays, NULL);*/
+	/*return 0;*/
+/*}*/
 
-AFTER_EACH() {
-	return close_subject();
-}
+/*AFTER_EACH() {*/
+	/*return close_subject();*/
+/*}*/
 
-SUBJECT(int) {
+/*SUBJECT(int) {*/
 	/*return ffmpeg_resample(&arg_resampler, in_buffer, out_buffer, arg_arg, resample_aciton, &arg_io_s);*/
-}
+/*}*/
 
-SUITE_CASE("resampled: convert and copy") {
-}
+/*SUITE_CASE("resampled: convert and copy") {*/
+	/*arg_resampler.in_cha*/
+	/*CUE_ASSERT_SUBJECT_SUCCEEDED();*/
 
-SUITE_CASE("same format resample, no need to do anything") {
-}
+	/*CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);*/
+	/*CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, NULL);*/
+	/*CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, in_buffer);*/
+	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, ret_out_channels);*/
+	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, arg_buffer_samples);*/
+	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, arg_out_format);*/
+	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_in_afs.align);*/
+
+	/*CUE_EXPECT_CALLED_ONCE(swr_convert);*/
+
+	/*CUE_EXPECT_CALLED_ONCE(memcpy);*/
+
+	/*CUE_EXPECT_CALLED_ONCE(resample_aciton);*/
+/*}*/
+
+/*SUITE_CASE("same format resample, no need to do anything") {*/
+/*}*/
 
 SUITE_END(ffmpeg_resample_test);

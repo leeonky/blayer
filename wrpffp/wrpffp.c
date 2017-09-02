@@ -420,6 +420,7 @@ static inline int setup_resampler_and_copy_afs_and_invoke_action(ffmpeg_resample
 	resampler->out_format = format;
 	resampler->in_layout = in_afs->layout;
 	resampler->in_format = in_afs->format;
+	resampler->in_channels = in_afs->channels;
 
 	return copy_afs_and_invoke_action(resampler, in_afs, channel_layout, format, out_afs, arg, action, io_s);
 }

@@ -78,6 +78,7 @@ typedef struct ffmpeg_resampler {
 	int sample_rate, align;
 	enum AVSampleFormat out_format, in_format;
 	uint64_t out_layout, in_layout;
+	int in_channels;
 	void *buffer;
 	int buffer_size;
 	uint8_t *planar_buffer[12];
