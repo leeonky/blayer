@@ -401,10 +401,6 @@ int ffmpeg_init_resampler(void *arg, int(*action)(ffmpeg_resampler *, void *, io
 	return res;
 }
 
-static int new_buffer_samples_size(const audio_frames *in_afs, int sample_rate) {
-	return 40;
-}
-
 static inline int copy_afs_and_invoke_action(ffmpeg_resampler *resampler, const audio_frames *in_afs, uint64_t channel_layout, enum AVSampleFormat format, audio_frames *out_afs, void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
 	*out_afs = *in_afs;
 	out_afs->layout = channel_layout;
@@ -418,6 +414,7 @@ static inline int copy_afs_and_invoke_action(ffmpeg_resampler *resampler, const 
 
 static inline int setup_resampler_and_copy_afs_and_invoke_action(ffmpeg_resampler *resampler, const audio_frames *in_afs, uint64_t channel_layout, enum AVSampleFormat format, audio_frames *out_afs, void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
 	resampler->sample_rate = in_afs->sample_rate;
+	resampler->align = in_afs->align;
 
 	resampler->out_layout = channel_layout;
 	resampler->out_format = format;
@@ -451,8 +448,10 @@ int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_
 			if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, in_afs->sample_rate, 
 							in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
 				if(!(ret=swr_init(swr_context))) {
-					if((resampler->buffer = av_malloc(av_samples_get_buffer_size(NULL, av_get_channel_layout_nb_channels(channel_layout), in_afs->buffer_samples, format, in_afs->align)))) {
+					int size = av_samples_get_buffer_size(NULL, av_get_channel_layout_nb_channels(channel_layout), in_afs->buffer_samples, format, in_afs->align);
+					if((resampler->buffer = av_malloc(size))) {
 						resampler->swr_context = swr_context;
+						resampler->buffer_size = size;
 						return  setup_resampler_and_copy_afs_and_invoke_action(resampler, in_afs, channel_layout, format, out_afs, arg, action, io_s);
 					} else
 						fprintf(io_s->stderr, "Error[libwrpffp]: failed to alloc buffer\n");

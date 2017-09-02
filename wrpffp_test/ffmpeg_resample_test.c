@@ -75,7 +75,7 @@ SUITE_CASE("should free swr when have opend swr") {
 SUITE_END(ffmpeg_resample_init_test);
 
 SUITE_START("ffmpeg_resample_reload_test");
-static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size;
+static int arg_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size, arg_align;
 static uint64_t arg_in_channels_layout, arg_out_channels_layout;
 static enum AVSampleFormat arg_in_format, arg_out_format;
 static ffmpeg_resampler arg_resampler;
@@ -113,6 +113,7 @@ BEFORE_EACH() {
 	arg_in_channels_layout = AV_CH_LAYOUT_5POINT1;
 	arg_in_format = AV_SAMPLE_FMT_U8;
 	ret_in_channels = 3;
+	arg_align = 1;
 
 	arg_out_channels_layout = AV_CH_LAYOUT_4POINT0;
 	arg_out_format = AV_SAMPLE_FMT_S16;
@@ -151,6 +152,7 @@ SUITE_CASE("first reload with params") {
 	arg_in_afs.format = arg_in_format;
 	arg_in_afs.count = 128;
 	arg_in_afs.buffer_samples = 20;
+	arg_in_afs.align = arg_align;
 	arg_resampler.swr_context = NULL;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -192,6 +194,8 @@ SUITE_CASE("first reload with params") {
 	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, arg_in_afs.align);
 
 	CUE_ASSERT_EQ(arg_resampler.sample_rate, arg_sample_rate);
+	CUE_ASSERT_EQ(arg_resampler.align, arg_align);
+	CUE_ASSERT_EQ(arg_resampler.buffer_size, ret_out_buffer_size);
 	CUE_ASSERT_EQ(arg_resampler.out_layout, arg_out_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.out_format, arg_out_format);
 	CUE_ASSERT_EQ(arg_resampler.in_layout, arg_in_channels_layout);
@@ -277,7 +281,6 @@ SUITE_CASE("reload same convertion with last params, should not close and open")
 
 SUITE_CASE("load diff convertion with last params") {
 	arg_resampler.swr_context = arg_swr_context;
-	arg_resampler.out_sample_rate = 0;
 	arg_resampler.out_layout = 0;
 	arg_resampler.out_format = 0;
 
@@ -348,13 +351,18 @@ SUITE_END(ffmpeg_resample_reload_test);
 
 SUITE_START("ffmpeg_resample_test");
 
-SUITE_CASE("resampled data size less and equal than original") {
+static void *in_buffer, *out_buffer;
+
+mock_function_3(int, resample_aciton, ffmpeg_resampler *, void *, io_stream *);
+
+SUBJECT(int) {
+	/*return ffmpeg_resample(&arg_resampler, in_buffer, out_buffer, arg_arg, resample_aciton, &arg_io_s);*/
 }
 
-SUITE_CASE("resampled data size more than original") {
+SUITE_CASE("resampled: convert and copy") {
 }
 
-SUITE_CASE("same format resample") {
+SUITE_CASE("same format resample, no need to do anything") {
 }
 
 SUITE_END(ffmpeg_resample_test);
