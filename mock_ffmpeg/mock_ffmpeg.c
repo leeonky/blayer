@@ -36,6 +36,8 @@ mock_function_9(struct SwrContext *, swr_alloc_set_opts, struct SwrContext *, in
 mock_function_1(int, swr_init, struct SwrContext *);
 mock_void_function_1(swr_free, struct SwrContext **);
 mock_function_1(int, av_get_channel_layout_nb_channels, uint64_t);
+mock_function_1(void *, av_malloc, size_t);
+mock_void_function_1(av_free, void *);
 
 int av_strerror(int errnum, char *errbuf, size_t errbuf_size) {
 	snprintf(errbuf, errbuf_size, "%d", errnum);

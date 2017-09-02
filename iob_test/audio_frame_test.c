@@ -47,7 +47,7 @@ static void assert_one_frame(const audio_frames *afs, void *arg, io_stream *io_s
 	CUE_ASSERT_EQ(afs->sample_rate, 48000);
 	CUE_ASSERT_EQ(afs->channels, 2);
 	CUE_ASSERT_EQ(afs->format, 6);
-	CUE_ASSERT_EQ(afs->buffer_size, 4800);
+	CUE_ASSERT_EQ(afs->buffer_samples, 4800);
 	CUE_ASSERT_EQ(afs->layout, 3);
 	CUE_ASSERT_EQ(afs->align, 1);
 

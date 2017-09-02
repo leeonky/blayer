@@ -10,6 +10,7 @@ static io_stream arg_io_s;
 static ffmpeg_resampler arg_res;
 static void *arg_arg;
 static struct SwrContext *arg_swr_context;
+static void *ret_buffer;
 
 mock_function_3(int, resample_init_action, ffmpeg_resampler *, void *, io_stream *);
 
@@ -23,8 +24,11 @@ BEFORE_EACH() {
 
 	arg_arg = &arg_arg;
 
+	ret_buffer = &ret_buffer;
+
 	init_mock_function(swr_free, NULL);
 	init_mock_function(resample_init_action, NULL);
+	init_mock_function(av_free, NULL);
 	return 0;
 }
 
@@ -48,6 +52,7 @@ SUITE_CASE("init resample and exit with out open and free") {
 
 static int resample_init_action_open_resample(ffmpeg_resampler *rsp, void *arg, io_stream *io_s) {
 	rsp->swr_context = arg_swr_context;
+	rsp->buffer = ret_buffer;
 	return 100;
 }
 
@@ -62,12 +67,15 @@ SUITE_CASE("should free swr when have opend swr") {
 	CUE_ASSERT_SUBJECT_FAILED_WITH(100);
 
 	CUE_EXPECT_CALLED_ONCE(swr_free);
+
+	CUE_EXPECT_CALLED_ONCE(av_free);
+	CUE_EXPECT_CALLED_WITH_PTR(av_free, 1, ret_buffer);
 }
 
 SUITE_END(ffmpeg_resample_init_test);
 
-SUITE_START("ffmpeg_resample_test");
-static int arg_in_sample_rate, arg_out_sample_rate, arg_out_channels;
+SUITE_START("ffmpeg_resample_reload_test");
+static int arg_in_sample_rate, arg_out_sample_rate, ret_out_channels, ret_in_channels, ret_out_buffer_size, ret_in_buffer_size;
 static uint64_t arg_in_channels_layout, arg_out_channels_layout;
 static enum AVSampleFormat arg_in_format, arg_out_format;
 static ffmpeg_resampler arg_resampler;
@@ -78,10 +86,22 @@ static struct SwrContext *stub_swr_alloc_set_opts(struct SwrContext *s, int64_t 
 }
 
 static int stub_av_get_channel_layout_nb_channels(uint64_t layout) {
-	return arg_out_channels;
+	if(layout == arg_out_channels_layout)
+		return ret_out_channels;
+	return ret_in_channels;
+}
+
+static int stub_av_samples_get_buffer_size(int *lines, int channels, int samples, enum AVSampleFormat format, int align) {
+	if(channels == ret_out_channels)
+		return ret_out_buffer_size;
+	return ret_in_buffer_size;
 }
 
 mock_function_3(int, reload_resampler_action, ffmpeg_resampler *, void *, io_stream *);
+
+static void *stub_av_malloc(size_t s) {
+	return ret_buffer;
+}
 
 BEFORE_EACH() {
 	init_subject("");
@@ -92,17 +112,26 @@ BEFORE_EACH() {
 	arg_in_sample_rate = 48000;
 	arg_in_channels_layout = AV_CH_LAYOUT_5POINT1;
 	arg_in_format = AV_SAMPLE_FMT_U8;
+	ret_in_channels = 3;
 
 	arg_out_sample_rate = 96000;
 	arg_out_channels_layout = AV_CH_LAYOUT_4POINT0;
 	arg_out_format = AV_SAMPLE_FMT_S16;
-	arg_out_channels = 5;
+	ret_out_channels = 5;
+
+	ret_buffer = &ret_buffer;
+
+	ret_out_buffer_size = 1024;
+	ret_in_buffer_size = 1024;
 
 	init_mock_function(swr_alloc_set_opts, stub_swr_alloc_set_opts);
 	init_mock_function(swr_init, NULL);
 	init_mock_function(swr_free, NULL);
 	init_mock_function(reload_resampler_action, NULL);
 	init_mock_function(av_get_channel_layout_nb_channels, stub_av_get_channel_layout_nb_channels);
+	init_mock_function(av_malloc, stub_av_malloc);
+	init_mock_function(av_free, NULL);
+	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
 
 	arg_arg = &arg_arg;
 
@@ -118,10 +147,13 @@ SUBJECT(int) {
 }
 
 SUITE_CASE("first reload with params") {
+	arg_in_sample_rate = 100;
+	arg_out_sample_rate = 199;
 	arg_in_afs.sample_rate = arg_in_sample_rate;
 	arg_in_afs.layout = arg_in_channels_layout;
 	arg_in_afs.format = arg_in_format;
 	arg_in_afs.count = 128;
+	arg_in_afs.buffer_samples = 20;
 	arg_resampler.swr_context = NULL;
 
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
@@ -147,9 +179,20 @@ SUITE_CASE("first reload with params") {
 
 	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_out_sample_rate);
 	CUE_ASSERT_EQ(arg_out_afs.layout, arg_out_channels_layout);
-	CUE_ASSERT_EQ(arg_out_afs.channels, arg_out_channels);
+	CUE_ASSERT_EQ(arg_out_afs.channels, ret_out_channels);
 	CUE_ASSERT_EQ(arg_out_afs.format, arg_out_format);
 	CUE_ASSERT_EQ(arg_out_afs.count, 128);
+	CUE_ASSERT_EQ(arg_out_afs.buffer_samples, 40);
+
+	CUE_EXPECT_CALLED_ONCE(av_malloc);
+	CUE_EXPECT_CALLED_WITH_INT(av_malloc, 1, ret_out_buffer_size);
+
+	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, ret_out_channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 40);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, arg_out_format);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, arg_in_afs.align);
 
 	CUE_ASSERT_EQ(arg_resampler.out_sample_rate, arg_out_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.out_layout, arg_out_channels_layout);
@@ -157,6 +200,7 @@ SUITE_CASE("first reload with params") {
 	CUE_ASSERT_EQ(arg_resampler.in_sample_rate, arg_in_sample_rate);
 	CUE_ASSERT_EQ(arg_resampler.in_layout, arg_in_channels_layout);
 	CUE_ASSERT_EQ(arg_resampler.in_format, arg_in_format);
+	CUE_ASSERT_PTR_EQ(arg_resampler.buffer, ret_buffer);
 }
 
 static struct SwrContext *stub_swr_alloc_set_opts_failed(struct SwrContext *s, int64_t out_ch_layout, enum AVSampleFormat out_sample_fmt, int out_sample_rate, int64_t in_ch_layout, enum AVSampleFormat in_sample_fmt, int in_sample_rate, int log_offset, void *log_ctx) {
@@ -192,6 +236,12 @@ SUITE_CASE("failed to init context") {
 	CUE_EXPECT_CALLED_ONCE(swr_free);
 
 	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -1\n");
+}
+
+SUITE_CASE("failed to av alloc") {
+}
+
+SUITE_CASE("no need to alloc buffer") {
 }
 
 SUITE_CASE("reload same convertion with last params, should not close and open") {
@@ -249,7 +299,7 @@ SUITE_CASE("load diff convertion with last params") {
 
 	CUE_ASSERT_EQ(arg_out_afs.sample_rate, arg_out_sample_rate);
 	CUE_ASSERT_EQ(arg_out_afs.layout, arg_out_channels_layout);
-	CUE_ASSERT_EQ(arg_out_afs.channels, arg_out_channels);
+	CUE_ASSERT_EQ(arg_out_afs.channels, ret_out_channels);
 	CUE_ASSERT_EQ(arg_out_afs.format, arg_out_format);
 	CUE_ASSERT_EQ(arg_out_afs.count, 128);
 
@@ -283,6 +333,19 @@ SUITE_CASE("in and out format is the same") {
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 1, &arg_resampler);
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 2, arg_arg);
 	CUE_EXPECT_CALLED_WITH_PTR(reload_resampler_action, 3, &arg_io_s);
+}
+
+SUITE_END(ffmpeg_resample_reload_test);
+
+SUITE_START("ffmpeg_resample_test");
+
+SUITE_CASE("resampled data size less and equal than original") {
+}
+
+SUITE_CASE("resampled data size more than original") {
+}
+
+SUITE_CASE("same format resample") {
 }
 
 SUITE_END(ffmpeg_resample_test);

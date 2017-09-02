@@ -384,13 +384,20 @@ int ffmpeg_load_audio(ffmpeg_frame *frame, const audio_frames *afs, int samples,
 	return res;
 }
 
+static void destroy_all_resampler(ffmpeg_resampler *rsp) {
+	if(rsp->swr_context) {
+		swr_free(&rsp->swr_context);
+		rsp->swr_context = NULL;
+	}
+	av_free(rsp->buffer);
+}
+
 int ffmpeg_init_resampler(void *arg, int(*action)(ffmpeg_resampler *, void *, io_stream *), io_stream *io_s) {
 	int res = 0;
 	ffmpeg_resampler rsp = {};
 	if(action)
 		res = action(&rsp, arg, io_s);
-	if(rsp.swr_context)
-		swr_free(&rsp.swr_context);
+	destroy_all_resampler(&rsp);
 	return res;
 }
 
@@ -421,10 +428,8 @@ int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_
 	if(resampler->swr_context) {
 		if(is_same_format(resampler, in_afs, sample_rate, channel_layout, format))
 			res = copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
-		else {
-			swr_free(&resampler->swr_context);
-			resampler->swr_context = NULL;
-		}
+		else
+			destroy_all_resampler(resampler);
 	}
 	if(!resampler->swr_context) {
 		if(is_same_resample(in_afs, sample_rate, channel_layout, format))
@@ -434,8 +439,12 @@ int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_
 			if((swr_context = swr_alloc_set_opts(NULL, channel_layout, format, sample_rate, 
 							in_afs->layout, in_afs->format, in_afs->sample_rate, 0, NULL))) {
 				if(!(ret=swr_init(swr_context))) {
+					int buffer_samples = 40; 
+					resampler->buffer = av_malloc(av_samples_get_buffer_size(NULL, av_get_channel_layout_nb_channels(channel_layout), buffer_samples, format, in_afs->align));
 					resampler->swr_context = swr_context;
-					return copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
+					res = copy_afs_and_invoke_action(resampler, in_afs, sample_rate, channel_layout, format, out_afs, arg, action, io_s);
+					out_afs->buffer_samples = buffer_samples;
+					return res;
 				} else {
 					swr_free(&swr_context);
 					res = print_error(ret, io_s->stderr);

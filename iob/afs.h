@@ -13,7 +13,7 @@ typedef struct audio_frame_index {
 } audio_frame_index;
 
 typedef struct audio_frames {
-	int sample_rate, channels, format, buffer_size, align, cbuf_id, cbuf_bits, cbuf_size;
+	int sample_rate, channels, format, buffer_samples, align, cbuf_id, cbuf_bits, cbuf_size;
 	uint64_t layout;
 	size_t count;
 	audio_frame_index frames[MAX_AUDIO_FRAMES_SIZE];
