@@ -40,6 +40,7 @@ AM_COND_IF([ENV_TEST], [],
 	   vplayer/Makefile
 	   vbuf/Makefile
 	   aplayer/Makefile
+	   rsp/Makefile
 	   ])])
 
 # Testing Makefile

@@ -1,7 +1,7 @@
 SUBDIRS = 
 
 if !ENV_TEST
-SUBDIRS += sys bputil iob wrpffp wrpsdl decoder vplayer vbuf aplayer
+SUBDIRS += sys bputil iob wrpffp wrpsdl decoder vplayer vbuf aplayer rsp
 endif
 
 if !ENV_PRD
