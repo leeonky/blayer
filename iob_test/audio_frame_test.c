@@ -121,57 +121,64 @@ SUITE_CASE("record log when bad frames format 2") {
 
 SUITE_END(audio_frame_handler_test)
 
-/*static audio_frames aframes;*/
+static audio_frames aframes;
 
-/*SUITE_START("audio_frame_test")*/
+SUITE_START("audio_frame_test")
 
-/*BEFORE_EACH() {*/
-	/*return init_subject("");*/
-/*}*/
+BEFORE_EACH() {
+	return init_subject("");
+}
 
-/*AFTER_EACH() {*/
-	/*return close_subject();*/
-/*}*/
+AFTER_EACH() {
+	return close_subject();
+}
 
-/*SUBJECT(int) {*/
-	/*output_audio_frames(&aframes, actxt.output_stream);*/
-	/*return 0;*/
-/*}*/
+SUBJECT(int) {
+	output_audio_frames(&aframes, actxt.output_stream);
+	return 0;
+}
 
-/*SUITE_CASE("output one frame") {*/
-	/*aframes.width = 1920;*/
-	/*aframes.height = 1080;*/
-	/*aframes.format = 3;*/
-	/*aframes.align = 1;*/
-	/*aframes.cbuf_id = 10;*/
-	/*aframes.cbuf_bits = 4;*/
-	/*aframes.cbuf_size = 1024;*/
-	/*aframes.count = 1;*/
-	/*aframes.frames[0].index = 100;*/
-	/*aframes.frames[0].pts = (int64_t)123456789012345;*/
+SUITE_CASE("output one frame") {
+	aframes.sample_rate = 48000;
+	aframes.channels = 8;
+	aframes.layout = 18;
+	aframes.format = 1;
+	aframes.cbuf_id = 10;
+	aframes.cbuf_bits = 4;
+	aframes.cbuf_size = 1024;
+	aframes.buffer_samples = 100;
+	aframes.align = 1;
+	aframes.count = 1;
+	aframes.frames[0].index = 100;
+	aframes.frames[0].pts = (int64_t)123456789012345;
+	aframes.frames[0].samples_size = 100;
 
-	/*CUE_ASSERT_SUBJECT_SUCCEEDED();*/
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	/*CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:3 align:1 cbuf:10 bits:4 size:1024 frames:100=>123456789012345");*/
-/*}*/
+	CUE_ASSERT_STDOUT_EQ("AFS rt:48000 ch:8 fmt:1 buf:100 lay:18 align:1 cbuf:10 bits:4 size:1024 frames:100=>123456789012345,100");
+}
 
-/*SUITE_CASE("output more than one frames") {*/
-	/*aframes.width = 1920;*/
-	/*aframes.height = 1080;*/
-	/*aframes.format = 3;*/
-	/*aframes.align = 1;*/
-	/*aframes.cbuf_id = 10;*/
-	/*aframes.cbuf_bits = 4;*/
-	/*aframes.cbuf_size = 1024;*/
-	/*aframes.count = 2;*/
-	/*aframes.frames[0].index = 100;*/
-	/*aframes.frames[0].pts = (int64_t)123456789012345;*/
-	/*aframes.frames[1].index = 101;*/
-	/*aframes.frames[1].pts = (int64_t)543210987654321;*/
+SUITE_CASE("output more than one frames") {
+	aframes.sample_rate = 48000;
+	aframes.channels = 8;
+	aframes.layout = 18;
+	aframes.format = 1;
+	aframes.cbuf_id = 10;
+	aframes.cbuf_bits = 4;
+	aframes.cbuf_size = 1024;
+	aframes.buffer_samples = 100;
+	aframes.align = 1;
+	aframes.count = 2;
+	aframes.frames[0].index = 100;
+	aframes.frames[0].pts = (int64_t)123456789012345;
+	aframes.frames[0].samples_size = 100;
+	aframes.frames[1].index = 101;
+	aframes.frames[1].pts = (int64_t)543210987654321;
+	aframes.frames[1].samples_size = 50;
 
-	/*CUE_ASSERT_SUBJECT_SUCCEEDED();*/
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	/*CUE_ASSERT_STDOUT_EQ("VFS w:1920 h:1080 fmt:3 align:1 cbuf:10 bits:4 size:1024 frames:100=>123456789012345,101=>543210987654321");*/
-/*}*/
+	CUE_ASSERT_STDOUT_EQ("AFS rt:48000 ch:8 fmt:1 buf:100 lay:18 align:1 cbuf:10 bits:4 size:1024 frames:100=>123456789012345,100,101=>543210987654321,50");
+}
 
-/*SUITE_END(audio_frame_test)*/
+SUITE_END(audio_frame_test)

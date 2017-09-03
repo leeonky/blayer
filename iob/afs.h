@@ -29,6 +29,6 @@ int iob_add_audio_frames_handler(io_bus *, const iob_audio_frames_handler *);
 
 //void output_append_frame(const audio_frame_index *, FILE *);
 
-//void output_audio_frames(const audio_frames *, FILE *);
+void output_audio_frames(const audio_frames *, FILE *);
 
 #endif

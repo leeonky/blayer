@@ -47,3 +47,16 @@ int iob_add_audio_frames_handler(io_bus *iob, const iob_audio_frames_handler *ha
 	};
 	return iob_add_handler(iob, &ioh);
 }
+
+static void output_append_frame(const audio_frame_index *frm, FILE *out) {
+	fprintf(out, ",%d=>%"PRId64",%d", frm->index, frm->pts, frm->samples_size);
+}
+
+void output_audio_frames(const audio_frames *frames, FILE *out) {
+	int count;
+	fprintf(out, "AFS rt:%d ch:%d fmt:%d buf:%d lay:%"PRIu64" align:%d cbuf:%d bits:%d size:%d frames:%d=>%"PRId64",%d", frames->sample_rate, frames->channels, frames->format, frames->buffer_samples, frames->layout, frames->align, frames->cbuf_id, frames->cbuf_bits, frames->cbuf_size, frames->frames[0].index, frames->frames[0].pts, frames->frames[0].samples_size);
+
+	for(count=1; count<frames->count; ++count)
+		output_append_frame(&frames->frames[count], out);
+}
+

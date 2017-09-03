@@ -114,6 +114,7 @@ int main() {
 	ADD_SUITE(video_frame_handler_test);
 	ADD_SUITE(video_frame_test);
 	ADD_SUITE(audio_frame_handler_test);
+	ADD_SUITE(audio_frame_test);
 
 	return run_test();
 }
