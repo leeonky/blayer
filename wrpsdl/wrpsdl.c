@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "wrpsdl.h"
 
 static int print_error(FILE *stderr) {

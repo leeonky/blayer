@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <semaphore.h>
+#include "usectime.h"
 
 typedef struct io_stream {
 	FILE *stdin, *stdout, *stderr;
