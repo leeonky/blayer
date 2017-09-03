@@ -22,6 +22,8 @@ BEFORE_EACH() {
 	init_subject("");
 
 	init_mock_function(av_image_copy_to_buffer, NULL);
+	init_mock_function(av_samples_fill_arrays, NULL);
+	init_mock_function(av_samples_copy, NULL);
 	return 0;
 }
 
@@ -86,22 +88,39 @@ SUITE_CASE("copy for audio, depents on decoder samples_size, channels, format") 
 	avframe.channels = 7;
 	decoder.samples_size = 128;
 
-	init_mock_function(memcpy, NULL);
-	init_mock_function(av_samples_get_buffer_size, stub_av_samples_get_buffer_size);
-
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	CUE_EXPECT_CALLED_ONCE(memcpy);
-	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 1, frame_buffer);
-	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 2, avframe.data[0]);
-	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 3, 1000);
+	CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, NULL);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, frame_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, avframe.channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, avframe.nb_samples);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, avframe.format);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_fframe.align);
 
-	CUE_EXPECT_CALLED_ONCE(av_samples_get_buffer_size);
-	CUE_EXPECT_CALLED_WITH_PTR(av_samples_get_buffer_size, 1, NULL);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 2, 7);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 3, 128);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 4, AV_SAMPLE_FMT_DBL);
-	CUE_EXPECT_CALLED_WITH_INT(av_samples_get_buffer_size, 5, 10);
+	CUE_EXPECT_CALLED_ONCE(av_samples_copy);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_copy, 2, avframe.data);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 3, 0);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 4, 0);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 5, avframe.nb_samples);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 6, avframe.channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_copy, 7, avframe.format);
+
+	CUE_ASSERT_PTR_EQ(params_of(av_samples_fill_arrays, 1), params_of(av_samples_copy, 1));
+}
+
+static int stub_av_samples_fill_arrays_failed(uint8_t **b, int *s, const uint8_t *d, int channels, int samples, enum AVSampleFormat format, int align) {
+	return -200;
+}
+
+SUITE_CASE("failed to fill array") {
+	init_mock_function(av_samples_fill_arrays, stub_av_samples_fill_arrays_failed);
+
+	CUE_EXPECT_NEVER_CALLED(av_samples_copy);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -200\n");
 }
 
 SUITE_END(ffmpeg_frame_copy_test);
@@ -268,7 +287,7 @@ SUBJECT(int) {
 	return ffmpeg_load_audio(&arg_fframe, &arg_afs, arg_samples, arg_buffer,  &arg_io_s);
 }
 
-SUITE_CASE("load image") {
+SUITE_CASE("load audio") {
 	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
 	CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);
@@ -282,10 +301,6 @@ SUITE_CASE("load image") {
 
 	CUE_ASSERT_EQ(arg_fframe.codec_type, AVMEDIA_TYPE_AUDIO);
 	CUE_ASSERT_EQ(arg_fframe.align, 1);
-}
-
-static int stub_av_samples_fill_arrays_failed(uint8_t **b, int *s, const uint8_t *d, int channels, int samples, enum AVSampleFormat format, int align) {
-	return -200;
 }
 
 SUITE_CASE("failed to fill") {

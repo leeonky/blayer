@@ -9,4 +9,4 @@ vplayer/vplayer &
 
 decoder/decoder $1 -a 0 -b $bits |
 rsp/rsp |
-aplayer/aplayer
+aplayer/aplayer > /dev/null

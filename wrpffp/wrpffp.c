@@ -333,13 +333,17 @@ const char *ffmpeg_frame_info(const ffmpeg_frame *frame) {
 int ffmpeg_frame_copy(ffmpeg_frame *frame, void *buf, size_t size, io_stream *io_s) {
 	int res = 0, ret;
 	AVFrame *avframe = frame->frame;
+	uint8_t *planar_buffer[12];
 	switch(frame->codec_type) {
 		case AVMEDIA_TYPE_VIDEO:
 			if((ret=av_image_copy_to_buffer(buf, size, (const uint8_t * const *)avframe->data, avframe->linesize, avframe->format, avframe->width, avframe->height, frame->align)) < 0 )
 				res = print_error(ret, io_s->stderr);
 			break;
 		case AVMEDIA_TYPE_AUDIO:
-			memcpy(buf, avframe->data[0], av_samples_get_buffer_size(NULL, avframe->channels, frame->decoder->samples_size, avframe->format, frame->align));
+			if((ret=av_samples_fill_arrays(planar_buffer, NULL, buf, avframe->channels, avframe->nb_samples, avframe->format, frame->align)) >= 0)
+				res = av_samples_copy(planar_buffer, avframe->data, 0, 0, avframe->nb_samples, avframe->channels, avframe->format);
+			else
+				res = print_error(ret, io_s->stderr);
 			break;
 		default:
 			not_support_media_type(frame->codec_type);
