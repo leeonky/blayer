@@ -88,5 +88,7 @@ extern int ffmpeg_init_resampler(void *, int(*)(ffmpeg_resampler *, void *, io_s
 
 extern int ffmpeg_reload_resampler(ffmpeg_resampler *, const audio_frames *, uint64_t, enum AVSampleFormat, audio_frames *, void *, int(*)(ffmpeg_resampler *, void *, io_stream *), io_stream *);
 
+extern int ffmpeg_resample(ffmpeg_resampler *, int, const void *, void *, io_stream *);
+
 #endif
 

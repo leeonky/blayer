@@ -46,5 +46,6 @@ extern_mock_function_1(int, av_get_channel_layout_nb_channels, uint64_t);
 
 extern_mock_function_1(void *, av_malloc, size_t);
 extern_mock_void_function_1(av_free, void *);
+extern_mock_function_5(int, swr_convert, struct SwrContext *, uint8_t **, int, const uint8_t **, int);
 
 #endif

@@ -474,3 +474,19 @@ int ffmpeg_reload_resampler(ffmpeg_resampler *resampler, const audio_frames *in_
 	return res;
 }
 
+int ffmpeg_resample(ffmpeg_resampler *resampler, int samples_size, const void *in, void *out, io_stream *io_s) {
+	int ret;
+	uint8_t *planar_buffer[12];
+	if(resampler->in_format==resampler->out_format && resampler->in_layout==resampler->out_layout) {
+		return 0;
+	} else {
+		if((ret=av_samples_fill_arrays(planar_buffer, NULL, in, resampler->in_channels, samples_size, resampler->in_format, resampler->align))>=0) { 
+			if((ret=swr_convert(resampler->swr_context, resampler->planar_buffer, samples_size, (const uint8_t **)planar_buffer, samples_size))>=0) {
+				memcpy(out, resampler->buffer, resampler->buffer_size);
+				return 0;
+			}
+		}
+		return print_error(ret, io_s->stderr);
+	}
+}
+

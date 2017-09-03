@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <cunitexd.h>
 #include "mock_ffmpeg/mock_ffmpeg.h"
+#include "mock_sys/mock_sys.h"
 #include "wrpffp/wrpffp.h"
 
 SUITE_START("ffmpeg_resample_init_test");
@@ -386,54 +387,112 @@ SUITE_END(ffmpeg_resample_reload_test);
 
 SUITE_START("ffmpeg_resample_test");
 
-static void *in_buffer, *out_buffer;
+static void *arg_in_buffer, *arg_out_buffer;
+static int arg_samples_size;
 
 mock_function_3(int, resample_aciton, ffmpeg_resampler *, void *, io_stream *);
 
-/*BEFORE_EACH() {*/
-	/*init_subject("");*/
-	/*arg_io_s.stdin = actxt.input_stream;*/
-	/*arg_io_s.stdout = actxt.output_stream;*/
-	/*arg_io_s.stderr = actxt.error_stream;*/
+BEFORE_EACH() {
+	init_subject("");
+	arg_io_s.stdin = actxt.input_stream;
+	arg_io_s.stdout = actxt.output_stream;
+	arg_io_s.stderr = actxt.error_stream;
 
-	/*ret_buffer = &ret_buffer;*/
+	ret_buffer = &ret_buffer;
+	arg_in_buffer = &arg_in_buffer;
+	arg_out_buffer = &arg_out_buffer;
+	arg_samples_size = 100;
 
-	/*arg_arg = &arg_arg;*/
+	arg_arg = &arg_arg;
 
-	/*init_mock_function(swr_convert, NULL);*/
-	/*init_mock_function(memcpy, NULL);*/
-	/*init_mock_function(av_samples_fill_arrays, NULL);*/
-	/*return 0;*/
-/*}*/
+	init_mock_function(swr_convert, NULL);
+	init_mock_function(memcpy, NULL);
+	init_mock_function(av_samples_fill_arrays, NULL);
+	return 0;
+}
 
-/*AFTER_EACH() {*/
-	/*return close_subject();*/
-/*}*/
+AFTER_EACH() {
+	return close_subject();
+}
 
-/*SUBJECT(int) {*/
-	/*return ffmpeg_resample(&arg_resampler, in_buffer, out_buffer, arg_arg, resample_aciton, &arg_io_s);*/
-/*}*/
+SUBJECT(int) {
+	return ffmpeg_resample(&arg_resampler, arg_samples_size, arg_in_buffer, arg_out_buffer, &arg_io_s);
+}
 
-/*SUITE_CASE("resampled: convert and copy") {*/
-	/*arg_resampler.in_cha*/
-	/*CUE_ASSERT_SUBJECT_SUCCEEDED();*/
+SUITE_CASE("resampled: convert and copy") {
+	arg_resampler.in_channels = 3;
+	arg_resampler.buffer = ret_buffer;
+	arg_resampler.buffer_size = 1280;
+	arg_resampler.in_format = 1;
+	arg_resampler.out_format = 2;
 
-	/*CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, NULL);*/
-	/*CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, in_buffer);*/
-	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, ret_out_channels);*/
-	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, arg_buffer_samples);*/
-	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, arg_out_format);*/
-	/*CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_in_afs.align);*/
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
 
-	/*CUE_EXPECT_CALLED_ONCE(swr_convert);*/
+	CUE_EXPECT_CALLED_ONCE(av_samples_fill_arrays);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 2, NULL);
+	CUE_EXPECT_CALLED_WITH_PTR(av_samples_fill_arrays, 3, arg_in_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 4, arg_resampler.in_channels);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 5, arg_samples_size);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 6, arg_resampler.in_format);
+	CUE_EXPECT_CALLED_WITH_INT(av_samples_fill_arrays, 7, arg_resampler.align);
 
-	/*CUE_EXPECT_CALLED_ONCE(memcpy);*/
+	CUE_EXPECT_CALLED_ONCE(swr_convert);
+	CUE_EXPECT_CALLED_WITH_PTR(swr_convert, 1, arg_resampler.swr_context);
+	CUE_EXPECT_CALLED_WITH_PTR(swr_convert, 2, arg_resampler.planar_buffer);
+	CUE_EXPECT_CALLED_WITH_INT(swr_convert, 3, arg_samples_size);
+	CUE_EXPECT_CALLED_WITH_INT(swr_convert, 5, arg_samples_size);
 
-	/*CUE_EXPECT_CALLED_ONCE(resample_aciton);*/
-/*}*/
+	CUE_ASSERT_PTR_EQ(params_of(swr_convert, 4), params_of(av_samples_fill_arrays, 1));
 
-/*SUITE_CASE("same format resample, no need to do anything") {*/
-/*}*/
+	CUE_EXPECT_CALLED_ONCE(memcpy);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 1, arg_out_buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 2, arg_resampler.buffer);
+	CUE_EXPECT_CALLED_WITH_PTR(memcpy, 3, arg_resampler.buffer_size);
+}
+
+SUITE_CASE("av_samples_fill_arrays failed") {
+	arg_resampler.in_format = 1;
+	arg_resampler.out_format = 2;
+	init_mock_function(av_samples_fill_arrays, stub_av_samples_fill_arrays_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(swr_convert);
+
+	CUE_EXPECT_NEVER_CALLED(memcpy);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -1\n");
+}
+
+static int stub_swr_convert_failed(struct SwrContext *s,  uint8_t **out,   int out_count,  const uint8_t **in,  int in_count) {
+	return -1;
+}
+
+SUITE_CASE("convert failed") {
+	arg_resampler.in_format = 1;
+	arg_resampler.out_format = 2;
+
+	init_mock_function(swr_convert, stub_swr_convert_failed);
+
+	CUE_ASSERT_SUBJECT_FAILED_WITH(-1);
+
+	CUE_EXPECT_NEVER_CALLED(memcpy);
+
+	CUE_ASSERT_STDERR_EQ("Error[libwrpffp]: -1\n");
+}
+
+SUITE_CASE("same format resample, no need to do anything") {
+	arg_out_buffer = arg_in_buffer;
+	arg_resampler.in_format = arg_resampler.out_format;
+	arg_resampler.in_layout = arg_resampler.out_layout;
+
+	CUE_ASSERT_SUBJECT_SUCCEEDED();
+
+	CUE_EXPECT_NEVER_CALLED(av_samples_fill_arrays);
+
+	CUE_EXPECT_NEVER_CALLED(swr_convert);
+
+	CUE_EXPECT_NEVER_CALLED(memcpy);
+}
 
 SUITE_END(ffmpeg_resample_test);
